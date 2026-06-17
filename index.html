@@ -463,6 +463,7 @@ body {
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   getFirestore, collection, query, where, orderBy, limit,
   getDocs, addDoc, updateDoc, doc, Timestamp
@@ -479,18 +480,34 @@ const firebaseConfig = {
   measurementId: "G-668H2W780D"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
 
 // ── STATE ────────────────────────────────────────────────
-let currentEmp  = null;   // Firestore employee doc { id, ...data }
-let openClockIn = null;   // Firestore ClockIns doc id that is open
-let clockInTime = null;   // ms timestamp when clocked in
+let currentEmp  = null;
+let openClockIn = null;
+let clockInTime = null;
 let timeInterval = null;
 
-// ── BOOT ─────────────────────────────────────────────────
-hide('screen-loader');
-show('screen-login');
+// ── BOOT — sign in anonymously first, then show login ────
+async function boot() {
+  try {
+    await signInAnonymously(auth);
+    hide('screen-loader');
+    show('screen-login');
+  } catch (err) {
+    console.error('Auth error:', err);
+    document.getElementById('screen-loader').innerHTML =
+      `<div style="color:#ef4444;text-align:center;padding:24px;max-width:300px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px">Connection Error</div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">${err.message}</div>
+        <div style="font-size:12px;color:#64748b">Make sure <b>Anonymous Authentication</b> is enabled in Firebase Console → Authentication → Sign-in method</div>
+        <button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Retry</button>
+      </div>`;
+  }
+}
+boot();
 
 // ══════════════════════════════════════════════════════════
 //  PIN LOGIN
