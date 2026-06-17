@@ -465,7 +465,7 @@ body {
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  getFirestore, collection, query, where, orderBy, limit,
+  getFirestore, collection, query, where, limit,
   getDocs, addDoc, updateDoc, doc, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -724,12 +724,13 @@ async function renderShiftLog() {
   try {
     const q = query(
       collection(db, 'ClockIns'),
-      where('employeeId', '==', currentEmp.id),
-      orderBy('clockIn', 'desc'),
-      limit(7)
+      where('employeeId', '==', currentEmp.id)
     );
     const snap = await getDocs(q);
-    const shifts = snap.docs.map(d => d.data()).filter(d => d.clockOut);
+    const shifts = snap.docs.map(d => d.data())
+      .filter(d => d.clockOut)
+      .sort((a, b) => (b.clockIn?.toMillis?.() ?? 0) - (a.clockIn?.toMillis?.() ?? 0))
+      .slice(0, 7);
     if (!shifts.length) { el.innerHTML = '<div class="empty">No completed shifts yet.</div>'; return; }
     el.innerHTML = shifts.map(s => {
       const inMs  = s.clockIn?.toMillis?.()  ?? 0;
@@ -760,13 +761,12 @@ async function renderHours() {
   try {
     const q = query(
       collection(db, 'ClockIns'),
-      where('employeeId', '==', currentEmp.id),
-      where('date', '>=', start),
-      where('date', '<=', end),
-      orderBy('date', 'desc')
+      where('employeeId', '==', currentEmp.id)
     );
     const snap = await getDocs(q);
-    const shifts = snap.docs.map(d => d.data()).filter(d => d.clockOut);
+    const shifts = snap.docs.map(d => d.data())
+      .filter(d => d.clockOut && d.date >= start && d.date <= end)
+      .sort((a, b) => (b.clockIn?.toMillis?.() ?? 0) - (a.clockIn?.toMillis?.() ?? 0));
 
     const total = shifts.reduce((s, d) => s + (d.hours ?? 0), 0);
     const reg   = Math.min(total, 80);
@@ -803,13 +803,14 @@ async function renderPay() {
   try {
     const q = query(
       collection(db, 'PayStatements'),
-      where('employeeId', '==', currentEmp.id),
-      orderBy('savedAt', 'desc')
+      where('employeeId', '==', currentEmp.id)
     );
     const snap = await getDocs(q);
     if (snap.empty) { el.innerHTML = '<div class="empty">No pay statements yet.</div>'; return; }
-    el.innerHTML = snap.docs.map(d => {
-      const p = d.data();
+    const docs = snap.docs
+      .map(d => d.data())
+      .sort((a, b) => (b.savedAt?.toMillis?.() ?? 0) - (a.savedAt?.toMillis?.() ?? 0));
+    el.innerHTML = docs.map(p => {
       const gross = p.gross || (p.hours * p.rate) || 0;
       const isPaid = p.status === 'paid';
       return `<div class="card">
@@ -839,13 +840,14 @@ async function renderTimeOff() {
   try {
     const q = query(
       collection(db, 'TimeOff'),
-      where('employeeId', '==', currentEmp.id),
-      orderBy('createdAt', 'desc')
+      where('employeeId', '==', currentEmp.id)
     );
     const snap = await getDocs(q);
     if (snap.empty) { el.innerHTML = '<div class="empty">No requests yet.</div>'; return; }
-    el.innerHTML = snap.docs.map(d => {
-      const r = d.data();
+    const requests = snap.docs
+      .map(d => d.data())
+      .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+    el.innerHTML = requests.map(r => {
       return `<div class="request-row">
         <div>
           <div class="request-type">${capitalize(r.type || 'Request')}</div>
