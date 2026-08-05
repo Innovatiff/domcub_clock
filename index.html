@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DomCub">
-<title>DomCub Clock</title>
+<meta name="apple-mobile-web-app-title" content="El Aguila">
+<title>El Aguila</title>
 <style>
 :root {
   --sidebar-bg: #1a1f36;
@@ -36,7 +36,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
 
-  /* motion */
+  /* movimiento */
   --ease: cubic-bezier(.4,0,.2,1);
   --spring: cubic-bezier(.34,1.56,.64,1);
   --sheet-ease: cubic-bezier(.32,.72,0,1);
@@ -61,14 +61,10 @@ body {
 button, input, select, textarea { font-family: inherit; color: inherit; }
 button { touch-action: manipulation; }
 
-/* prevent accidental text selection on chrome-like UI */
-.noselect, .tabbar, .appbar, .dial-wrap, .keypad, .seg { user-select: none; -webkit-user-select: none; }
+.tabbar, .appbar, .dial-wrap, .keypad, .seg { user-select: none; -webkit-user-select: none; }
 
-/* ═══════════ SCREENS ═══════════ */
-.screen {
-  position: fixed; inset: 0;
-  display: none; flex-direction: column;
-}
+/* ═══════════ PANTALLAS ═══════════ */
+.screen { position: fixed; inset: 0; display: none; flex-direction: column; }
 .screen.active { display: flex; }
 .screen.enter { animation: screenIn .42s var(--ease) both; }
 .screen.leave { animation: screenOut .3s var(--ease) both; }
@@ -76,7 +72,7 @@ button { touch-action: manipulation; }
 @keyframes screenIn  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes screenOut { from { opacity: 1; } to { opacity: 0; transform: scale(1.02); } }
 
-/* ═══════════ BOOT ═══════════ */
+/* ═══════════ CARGA ═══════════ */
 #screen-boot {
   align-items: center; justify-content: center;
   background: var(--sidebar-bg); gap: 20px;
@@ -90,7 +86,7 @@ button { touch-action: manipulation; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .boot-text { color: var(--text-light); font-size: 13px; letter-spacing: .2px; }
 
-/* ═══════════ LOGIN ═══════════ */
+/* ═══════════ ACCESO ═══════════ */
 #screen-login {
   align-items: center; justify-content: center;
   padding: 24px calc(24px + env(safe-area-inset-left, 0px)) calc(24px + var(--safe-bot));
@@ -101,7 +97,7 @@ button { touch-action: manipulation; }
   overflow-y: auto;
 }
 
-/* auto margins keep it centred when there's room, scrollable when there isn't */
+/* los márgenes automáticos centran cuando cabe y permiten scroll cuando no */
 .brand { text-align: center; margin: auto auto 26px; animation: dropIn .6s var(--spring) both; }
 @keyframes dropIn { from { opacity: 0; transform: translateY(-14px) scale(.9); } to { opacity: 1; transform: none; } }
 
@@ -116,7 +112,7 @@ button { touch-action: manipulation; }
 .brand-mark .hand { transform-origin: 12px 12px; animation: sweep 6s linear infinite; }
 @keyframes sweep { to { transform: rotate(360deg); } }
 
-.brand-name { color: #fff; font-size: 21px; font-weight: 700; letter-spacing: -.3px; }
+.brand-name { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
 .brand-tag  { color: var(--text-light); font-size: 11.5px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
 
 .pin-card {
@@ -156,13 +152,13 @@ button { touch-action: manipulation; }
   transition: transform .12s var(--ease), background .16s;
 }
 .key:active { transform: scale(.93); background: var(--primary-light); }
-.key.aux { font-size: 11.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .6px; }
+.key.aux { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .5px; }
 .key.del { color: var(--text-muted); }
 .key.del svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 
 .pin-msg { text-align: center; font-size: 12.5px; font-weight: 500; margin-top: 15px; min-height: 18px; color: var(--danger); }
 
-/* ═══════════ APP SHELL ═══════════ */
+/* ═══════════ ESTRUCTURA ═══════════ */
 #screen-app { background: var(--bg); }
 
 .appbar {
@@ -193,7 +189,6 @@ button { touch-action: manipulation; }
 .icon-btn:active { transform: scale(.9); background: rgba(255,255,255,.18); }
 .icon-btn svg { width: 19px; height: 19px; stroke: rgba(255,255,255,.9); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 
-/* scroll area */
 .scroller {
   flex: 1; overflow-y: auto; overflow-x: hidden;
   -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
@@ -201,7 +196,7 @@ button { touch-action: manipulation; }
 }
 .page { max-width: 520px; margin: 0 auto; }
 
-/* ═══════════ TABS ═══════════ */
+/* ═══════════ PESTAÑAS ═══════════ */
 .tabbar {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
   display: flex; padding-bottom: var(--safe-bot);
@@ -227,7 +222,7 @@ button { touch-action: manipulation; }
 }
 .tab.active::after { width: 30px; }
 
-/* ═══════════ SECTIONS ═══════════ */
+/* ═══════════ SECCIONES ═══════════ */
 .section { display: none; }
 .section.active { display: block; }
 .section.slide-l { animation: slideL .34s var(--ease) both; }
@@ -235,13 +230,10 @@ button { touch-action: manipulation; }
 @keyframes slideL { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
 @keyframes slideR { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
 
-.head {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 14px;
-}
+.head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .head h1 { font-size: 24px; font-weight: 800; letter-spacing: -.7px; }
 
-/* ═══════════ CARDS ═══════════ */
+/* ═══════════ TARJETAS ═══════════ */
 .card {
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 18px; padding: 18px; margin-bottom: 12px;
@@ -252,11 +244,10 @@ button { touch-action: manipulation; }
   text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
 }
 
-/* fade-up on mount */
 .rise { animation: rise .5s var(--ease) backwards; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
-/* ═══════════ HOME / DIAL ═══════════ */
+/* ═══════════ INICIO / DIAL ═══════════ */
 .now { text-align: center; margin-bottom: 4px; }
 .now-time {
   font-size: 15px; font-weight: 600; color: var(--text-muted);
@@ -264,10 +255,7 @@ button { touch-action: manipulation; }
 }
 .now-date { font-size: 12.5px; color: var(--text-light); margin-top: 3px; font-weight: 500; }
 
-.dial-wrap {
-  position: relative; width: 252px; height: 252px;
-  margin: 14px auto 6px; display: grid; place-items: center;
-}
+.dial-wrap { position: relative; width: 252px; height: 252px; margin: 14px auto 6px; display: grid; place-items: center; }
 
 .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke-linecap: round; }
@@ -301,11 +289,8 @@ button { touch-action: manipulation; }
 }
 
 .dial-icon { width: 34px; height: 34px; stroke: #fff; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 2px; }
-.dial-big {
-  font-size: 34px; font-weight: 800; letter-spacing: -1.2px;
-  font-variant-numeric: tabular-nums; line-height: 1;
-}
-.dial-sub { font-size: 10.5px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; opacity: .82; }
+.dial-big { font-size: 34px; font-weight: 800; letter-spacing: -1.2px; font-variant-numeric: tabular-nums; line-height: 1; }
+.dial-sub { font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; opacity: .82; }
 
 .live-chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -318,7 +303,6 @@ button { touch-action: manipulation; }
 
 .dial-caption { text-align: center; font-size: 12.5px; color: var(--text-muted); margin-top: 10px; min-height: 18px; font-weight: 500; }
 
-/* quick stats */
 .quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0 12px; }
 .quick-item {
   background: var(--card-bg); border: 1px solid var(--border);
@@ -327,7 +311,7 @@ button { touch-action: manipulation; }
 .quick-val { font-size: 22px; font-weight: 800; letter-spacing: -.7px; font-variant-numeric: tabular-nums; }
 .quick-lbl { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-top: 4px; }
 
-/* ═══════════ LIST ROWS ═══════════ */
+/* ═══════════ FILAS ═══════════ */
 .row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 0; border-bottom: 1px solid var(--border);
@@ -352,7 +336,7 @@ button { touch-action: manipulation; }
 .row-val  { font-size: 14.5px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .row-val small { font-size: 11px; color: var(--text-light); font-weight: 600; margin-left: 2px; }
 
-/* ═══════════ SEGMENTED ═══════════ */
+/* ═══════════ SEGMENTADO ═══════════ */
 .seg {
   position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
   background: #eef1f6; border-radius: 13px; padding: 4px; margin-bottom: 14px;
@@ -370,12 +354,9 @@ button { touch-action: manipulation; }
 }
 .seg-btn.active { color: var(--text); }
 
-/* ═══════════ STATS ═══════════ */
+/* ═══════════ ESTADÍSTICAS ═══════════ */
 .hero { text-align: center; padding: 4px 0 16px; border-bottom: 1px solid var(--border); }
-.hero-val {
-  font-size: 46px; font-weight: 800; letter-spacing: -2px; line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
+.hero-val { font-size: 46px; font-weight: 800; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
 .hero-val .unit { font-size: 17px; font-weight: 700; color: var(--text-light); margin-left: 4px; letter-spacing: -.2px; }
 .hero-lbl { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-top: 9px; }
 
@@ -387,7 +368,6 @@ button { touch-action: manipulation; }
 .stat-l { color: var(--text-muted); font-weight: 500; }
 .stat-v { font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* mini bar chart */
 .bars { display: flex; align-items: flex-end; gap: 5px; margin: 4px 0 10px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
 .bar {
@@ -399,7 +379,7 @@ button { touch-action: manipulation; }
 @keyframes growBar { from { transform: scaleY(0); opacity: .3; } to { transform: scaleY(1); opacity: 1; } }
 .bar-lbl { font-size: 9.5px; color: var(--text-light); font-weight: 600; white-space: nowrap; }
 
-/* ═══════════ PAY ═══════════ */
+/* ═══════════ PAGOS ═══════════ */
 .pay-top {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   padding-bottom: 14px; border-bottom: 1px solid var(--border);
@@ -407,7 +387,7 @@ button { touch-action: manipulation; }
 .pay-amt { font-size: 32px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .pay-per { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
 
-/* ═══════════ BADGES ═══════════ */
+/* ═══════════ ETIQUETAS ═══════════ */
 .badge {
   padding: 4px 11px; border-radius: 99px; font-size: 11px; font-weight: 700;
   white-space: nowrap; border: 1px solid transparent; letter-spacing: .1px;
@@ -418,7 +398,7 @@ button { touch-action: manipulation; }
 .badge.denied,
 .badge.rejected { background: var(--danger-light);  color: #b91c1c; border-color: rgba(239,68,68,.24); }
 
-/* ═══════════ BUTTONS ═══════════ */
+/* ═══════════ BOTONES ═══════════ */
 .btn {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   width: 100%; padding: 15px; border: none; border-radius: 15px;
@@ -442,27 +422,21 @@ button { touch-action: manipulation; }
 .btn-sm:active { transform: scale(.94); }
 .btn-sm svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; }
 
-/* ═══════════ FORMS ═══════════ */
+/* ═══════════ FORMULARIOS ═══════════ */
 .fgroup { margin-bottom: 14px; }
 .flabel { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 7px; }
-.finput, .fselect, .ftext {
+.finput, .ftext {
   width: 100%; padding: 13px 14px; border: 1.5px solid var(--border);
   border-radius: 13px; font-size: 16px; background: var(--bg);
   transition: border-color .18s, box-shadow .18s, background .18s;
 }
-.fselect {
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat: no-repeat; background-position: right 14px center;
-}
-.finput:focus, .fselect:focus, .ftext:focus {
+.finput:focus, .ftext:focus {
   outline: none; border-color: var(--primary); background: var(--card-bg);
   box-shadow: 0 0 0 4px rgba(79,70,229,.1);
 }
 .ftext { min-height: 84px; resize: none; line-height: 1.5; }
 .fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-/* type chooser */
 .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .chip {
   padding: 12px 10px; border: 1.5px solid var(--border); border-radius: 13px;
@@ -475,7 +449,7 @@ button { touch-action: manipulation; }
   color: var(--primary-dark); transform: scale(1.02);
 }
 
-/* ═══════════ SHEET ═══════════ */
+/* ═══════════ HOJA INFERIOR ═══════════ */
 .sheet { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
 .sheet.open { pointer-events: auto; }
 .sheet-bd {
@@ -499,7 +473,7 @@ button { touch-action: manipulation; }
 .grabber { width: 40px; height: 4.5px; border-radius: 99px; background: var(--border); margin: 0 auto 16px; }
 .sheet-title { font-size: 19px; font-weight: 800; letter-spacing: -.4px; margin-bottom: 16px; }
 
-/* ═══════════ SUCCESS FLASH ═══════════ */
+/* ═══════════ CONFIRMACIÓN ═══════════ */
 .flash {
   position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
   pointer-events: none; opacity: 0; background: rgba(248,250,252,.72);
@@ -507,12 +481,9 @@ button { touch-action: manipulation; }
 }
 .flash.show { animation: flashSeq 1.7s var(--ease) forwards; }
 @keyframes flashSeq {
-  0%   { opacity: 0; }
-  12%  { opacity: 1; }
-  78%  { opacity: 1; }
-  100% { opacity: 0; }
+  0% { opacity: 0; } 12% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; }
 }
-.flash-in { text-align: center; transform: scale(.8); }
+.flash-in { text-align: center; transform: scale(.8); padding: 0 24px; }
 .flash.show .flash-in { animation: popIn .55s var(--spring) .05s forwards; }
 @keyframes popIn { to { transform: scale(1); } }
 
@@ -523,18 +494,14 @@ button { touch-action: manipulation; }
 .flash-ring.out { background: var(--primary-light); }
 .flash-svg { width: 46px; height: 46px; stroke: var(--success); fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
 .flash-ring.out .flash-svg { stroke: var(--primary); }
-.flash-svg path, .flash-svg polyline {
-  stroke-dasharray: 60; stroke-dashoffset: 60;
-}
-.flash.show .flash-svg path, .flash.show .flash-svg polyline {
-  animation: draw .5s var(--ease) .3s forwards;
-}
+.flash-svg polyline { stroke-dasharray: 60; stroke-dashoffset: 60; }
+.flash.show .flash-svg polyline { animation: draw .5s var(--ease) .3s forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 
 .flash-title { font-size: 19px; font-weight: 800; letter-spacing: -.4px; }
 .flash-sub { font-size: 13.5px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
 
-/* ═══════════ EMPTY / SKELETON ═══════════ */
+/* ═══════════ VACÍO / ESQUELETO ═══════════ */
 .empty { text-align: center; padding: 30px 16px; animation: rise .5s var(--ease); }
 .empty svg { width: 42px; height: 42px; stroke: var(--text-light); fill: none; stroke-width: 1.4; opacity: .5; margin-bottom: 10px; }
 .empty-t { font-size: 14px; font-weight: 600; color: var(--text-muted); }
@@ -549,7 +516,7 @@ button { touch-action: manipulation; }
 }
 @keyframes shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
-/* ═══════════ TOAST ═══════════ */
+/* ═══════════ AVISO ═══════════ */
 .toast {
   position: fixed; left: 50%; bottom: calc(92px + var(--safe-bot));
   transform: translate(-50%, 20px); z-index: 400;
@@ -572,13 +539,13 @@ button { touch-action: manipulation; }
 </head>
 <body>
 
-<!-- ═══ BOOT ═══ -->
+<!-- ═══ CARGA ═══ -->
 <div id="screen-boot" class="screen active">
   <div class="spinner"></div>
-  <div class="boot-text">Connecting…</div>
+  <div class="boot-text">Conectando…</div>
 </div>
 
-<!-- ═══ LOGIN ═══ -->
+<!-- ═══ ACCESO ═══ -->
 <div id="screen-login" class="screen">
   <div class="brand">
     <div class="brand-mark">
@@ -587,12 +554,12 @@ button { touch-action: manipulation; }
         <polyline class="hand" points="12 7 12 12 15.5 13.8"/>
       </svg>
     </div>
-    <div class="brand-name">DomCub Clock</div>
-    <div class="brand-tag">Employee Time Tracking</div>
+    <div class="brand-name">El Aguila</div>
+    <div class="brand-tag">Control de Horas</div>
   </div>
 
   <div class="pin-card">
-    <div class="pin-label">Enter your PIN</div>
+    <div class="pin-label">Ingresa tu PIN</div>
     <div class="pin-dots" id="pinDots">
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
@@ -607,9 +574,9 @@ button { touch-action: manipulation; }
       <button class="key" data-k="7">7</button>
       <button class="key" data-k="8">8</button>
       <button class="key" data-k="9">9</button>
-      <button class="key aux" data-k="clear">CLEAR</button>
+      <button class="key aux" data-k="clear">BORRAR</button>
       <button class="key" data-k="0">0</button>
-      <button class="key del" data-k="del" aria-label="Delete">
+      <button class="key del" data-k="del" aria-label="Borrar último dígito">
         <svg viewBox="0 0 24 24"><path d="M20 5H9l-6 7 6 7h11a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><line x1="17" y1="9.5" x2="12.5" y2="14.5"/><line x1="12.5" y1="9.5" x2="17" y2="14.5"/></svg>
       </button>
     </div>
@@ -617,18 +584,18 @@ button { touch-action: manipulation; }
   </div>
 </div>
 
-<!-- ═══ APP ═══ -->
+<!-- ═══ APLICACIÓN ═══ -->
 <div id="screen-app" class="screen">
 
   <header class="appbar">
     <div class="appbar-left">
       <div class="avatar" id="avatar">—</div>
       <div style="min-width:0">
-        <div class="greet" id="greet">Welcome</div>
+        <div class="greet" id="greet">Bienvenido</div>
         <div class="uname" id="uname">—</div>
       </div>
     </div>
-    <button class="icon-btn" onclick="signOut()" aria-label="Sign out">
+    <button class="icon-btn" onclick="signOut()" aria-label="Cerrar sesión">
       <svg viewBox="0 0 24 24"><path d="M15 17l5-5-5-5"/><line x1="20" y1="12" x2="9" y2="12"/><path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/></svg>
     </button>
   </header>
@@ -636,7 +603,7 @@ button { touch-action: manipulation; }
   <div class="scroller" id="scroller">
     <div class="page">
 
-      <!-- ── HOME ── -->
+      <!-- ── INICIO ── -->
       <section id="sec-home" class="section active">
         <div class="now rise">
           <div class="now-time" id="nowTime">—</div>
@@ -654,37 +621,37 @@ button { touch-action: manipulation; }
               <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/>
             </svg>
             <span class="dial-big" id="dialBig" hidden></span>
-            <span class="dial-sub" id="dialSub">Clock In</span>
+            <span class="dial-sub" id="dialSub">Marcar Entrada</span>
           </button>
         </div>
 
-        <div class="dial-caption" id="dialCaption">Tap to start your shift</div>
+        <div class="dial-caption" id="dialCaption">Toca para iniciar tu turno</div>
 
         <div class="quick">
           <div class="quick-item rise" style="animation-delay:.12s">
             <div class="quick-val" id="qToday">0.0</div>
-            <div class="quick-lbl">Hours today</div>
+            <div class="quick-lbl">Horas hoy</div>
           </div>
           <div class="quick-item rise" style="animation-delay:.18s">
             <div class="quick-val" id="qPeriod">0.0</div>
-            <div class="quick-lbl">This period</div>
+            <div class="quick-lbl">Este periodo</div>
           </div>
         </div>
 
         <div class="card rise" style="animation-delay:.24s">
-          <div class="card-title">Recent Shifts</div>
+          <div class="card-title">Turnos Recientes</div>
           <div id="recentList"></div>
         </div>
       </section>
 
-      <!-- ── HOURS ── -->
+      <!-- ── HORAS ── -->
       <section id="sec-hours" class="section">
-        <div class="head"><h1>My Hours</h1></div>
+        <div class="head"><h1>Mis Horas</h1></div>
 
         <div class="seg" id="periodSeg">
           <span class="seg-thumb" id="segThumb"></span>
-          <button class="seg-btn active" data-p="current" onclick="setPeriod('current',this)">This period</button>
-          <button class="seg-btn" data-p="prev" onclick="setPeriod('prev',this)">Last period</button>
+          <button class="seg-btn active" data-p="current" onclick="setPeriod('current',this)">Este periodo</button>
+          <button class="seg-btn" data-p="prev" onclick="setPeriod('prev',this)">Periodo anterior</button>
         </div>
 
         <div class="card">
@@ -692,40 +659,40 @@ button { touch-action: manipulation; }
             <div class="hero-val"><span id="heroNum">0.0</span><span class="unit">hrs</span></div>
             <div class="hero-lbl" id="heroLbl">—</div>
           </div>
-          <div class="stat"><span class="stat-l">Regular</span><span class="stat-v" id="sReg">0.00</span></div>
-          <div class="stat"><span class="stat-l">Overtime</span><span class="stat-v" id="sOt">0.00</span></div>
-          <div class="stat"><span class="stat-l">Shifts</span><span class="stat-v" id="sCount">0</span></div>
-          <div class="stat"><span class="stat-l">Estimated gross</span><span class="stat-v" id="sGross" style="color:var(--success)">$0.00</span></div>
+          <div class="stat"><span class="stat-l">Horas regulares</span><span class="stat-v" id="sReg">0.00</span></div>
+          <div class="stat"><span class="stat-l">Horas extras</span><span class="stat-v" id="sOt">0.00</span></div>
+          <div class="stat"><span class="stat-l">Turnos</span><span class="stat-v" id="sCount">0</span></div>
+          <div class="stat"><span class="stat-l">Pago bruto estimado</span><span class="stat-v" id="sGross" style="color:var(--success)">$0.00</span></div>
         </div>
 
         <div class="card" id="chartCard">
-          <div class="card-title">Daily Breakdown</div>
+          <div class="card-title">Desglose Diario</div>
           <div class="bars" id="bars"></div>
         </div>
 
         <div class="card">
-          <div class="card-title">All Shifts</div>
+          <div class="card-title">Todos los Turnos</div>
           <div id="shiftList"></div>
         </div>
       </section>
 
-      <!-- ── PAY ── -->
+      <!-- ── PAGOS ── -->
       <section id="sec-pay" class="section">
-        <div class="head"><h1>Pay</h1></div>
+        <div class="head"><h1>Pagos</h1></div>
         <div id="payList"></div>
       </section>
 
-      <!-- ── TIME OFF ── -->
+      <!-- ── PERMISOS ── -->
       <section id="sec-off" class="section">
         <div class="head">
-          <h1>Time Off</h1>
+          <h1>Permisos</h1>
           <button class="btn-sm" onclick="openSheet()">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Request
+            Solicitar
           </button>
         </div>
         <div class="card">
-          <div class="card-title">My Requests</div>
+          <div class="card-title">Mis Solicitudes</div>
           <div id="offList"></div>
         </div>
       </section>
@@ -735,58 +702,58 @@ button { touch-action: manipulation; }
 
   <nav class="tabbar" id="tabbar">
     <button class="tab active" data-tab="home" onclick="go('home')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/></svg>Clock
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/></svg>Reloj
     </button>
     <button class="tab" data-tab="hours" onclick="go('hours')">
-      <svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>Hours
+      <svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>Horas
     </button>
     <button class="tab" data-tab="pay" onclick="go('pay')">
-      <svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="9.5" y2="14.5"/></svg>Pay
+      <svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="9.5" y2="14.5"/></svg>Pagos
     </button>
     <button class="tab" data-tab="off" onclick="go('off')">
-      <svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="15" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="12" y1="13.5" x2="12" y2="17.5"/><line x1="10" y1="15.5" x2="14" y2="15.5"/></svg>Time Off
+      <svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="15" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="12" y1="13.5" x2="12" y2="17.5"/><line x1="10" y1="15.5" x2="14" y2="15.5"/></svg>Permisos
     </button>
   </nav>
 </div>
 
-<!-- ═══ REQUEST SHEET ═══ -->
+<!-- ═══ HOJA DE SOLICITUD ═══ -->
 <div class="sheet" id="sheet">
   <div class="sheet-bd" onclick="closeSheet()"></div>
   <div class="sheet-panel" id="sheetPanel">
     <div class="grabber" id="grabber"></div>
-    <div class="sheet-title">Request Time Off</div>
+    <div class="sheet-title">Solicitar Permiso</div>
 
     <div class="fgroup">
-      <label class="flabel">Type</label>
+      <label class="flabel">Tipo</label>
       <div class="chips" id="typeChips">
-        <div class="chip on" data-t="vacation">Vacation</div>
-        <div class="chip" data-t="sick">Sick leave</div>
-        <div class="chip" data-t="personal">Personal</div>
-        <div class="chip" data-t="unpaid">Unpaid</div>
+        <div class="chip on" data-t="vacation">Vacaciones</div>
+        <div class="chip" data-t="sick">Enfermedad</div>
+        <div class="chip" data-t="personal">Día personal</div>
+        <div class="chip" data-t="unpaid">Sin goce</div>
       </div>
     </div>
 
     <div class="fgrid">
       <div class="fgroup">
-        <label class="flabel" for="offStart">From</label>
+        <label class="flabel" for="offStart">Desde</label>
         <input type="date" class="finput" id="offStart">
       </div>
       <div class="fgroup">
-        <label class="flabel" for="offEnd">To</label>
+        <label class="flabel" for="offEnd">Hasta</label>
         <input type="date" class="finput" id="offEnd">
       </div>
     </div>
 
     <div class="fgroup">
-      <label class="flabel" for="offNote">Note <span style="font-weight:500;color:var(--text-light)">(optional)</span></label>
-      <textarea class="ftext" id="offNote" placeholder="Anything your manager should know…"></textarea>
+      <label class="flabel" for="offNote">Nota <span style="font-weight:500;color:var(--text-light)">(opcional)</span></label>
+      <textarea class="ftext" id="offNote" placeholder="Algo que tu gerente deba saber…"></textarea>
     </div>
 
-    <button class="btn" id="offSubmit" onclick="submitRequest()">Submit Request</button>
+    <button class="btn" id="offSubmit" onclick="submitRequest()">Enviar Solicitud</button>
   </div>
 </div>
 
-<!-- ═══ FLASH ═══ -->
+<!-- ═══ CONFIRMACIÓN ═══ -->
 <div class="flash" id="flash">
   <div class="flash-in">
     <div class="flash-ring" id="flashRing">
@@ -807,7 +774,7 @@ import {
   getDocs, getDoc, addDoc, updateDoc, doc, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// ── CONFIG ───────────────────────────────────────────────
+// ── CONFIGURACIÓN ────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDtOfZXPEP-k_gvvu3Lvt307mOLBWezMrw",
   authDomain: "domcub.firebaseapp.com",
@@ -822,32 +789,33 @@ const fb   = initializeApp(firebaseConfig);
 const db   = getFirestore(fb);
 const auth = getAuth(fb);
 
-const OT_LIMIT   = 80;    // hours per pay period before overtime
-const SHIFT_GOAL = 8;     // hours — fills the progress ring
+const OT_LIMIT   = 80;      // horas por periodo antes de contar extras
+const SHIFT_GOAL = 8;       // horas — llena el anillo de progreso
 const RING_LEN   = 2 * Math.PI * 110;
+const LOCALE     = 'es-MX'; // formato de hora y fecha
 
 const $ = id => document.getElementById(id);
 
-// ── STATE ────────────────────────────────────────────────
+// ── ESTADO ───────────────────────────────────────────────
 let emp = null, openId = null, inAt = null, shifts = null;
 let tab = 'home', period = 'current', offType = 'vacation';
 let ticker = null;
 
 const TAB_ORDER = ['home', 'hours', 'pay', 'off'];
 
-// ── BOOT ─────────────────────────────────────────────────
+// ── ARRANQUE ─────────────────────────────────────────────
 (async () => {
   try {
     await signInAnonymously(auth);
     swap('screen-boot', 'screen-login');
   } catch (err) {
-    console.error('Auth error:', err);
+    console.error('Error de autenticación:', err);
     $('screen-boot').innerHTML = `
       <div style="text-align:center;padding:28px;max-width:320px">
-        <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:10px">Unable to connect</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:10px">No se pudo conectar</div>
         <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:18px">${esc(err.message)}</div>
-        <div style="font-size:12px;color:#64748b;line-height:1.6">Turn on <b style="color:#94a3b8">Anonymous sign-in</b> in Firebase Console → Authentication → Sign-in method.</div>
-        <button onclick="location.reload()" style="margin-top:22px;padding:13px 30px;background:#4f46e5;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer">Try again</button>
+        <div style="font-size:12px;color:#64748b;line-height:1.6">Activa el <b style="color:#94a3b8">Acceso anónimo</b> en Firebase Console → Authentication → Sign-in method.</div>
+        <button onclick="location.reload()" style="margin-top:22px;padding:13px 30px;background:#4f46e5;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer">Reintentar</button>
       </div>`;
   }
 })();
@@ -901,13 +869,15 @@ function failPin(msg) {
 async function verify() {
   $('pinMsg').textContent = '';
   try {
+    // OJO: los valores guardados en Firestore siguen en inglés ("active")
+    // para que la app de administración siga funcionando igual.
     const snap = await getDocs(query(
       collection(db, 'Employees'),
       where('pin', '==', pin),
       where('status', '==', 'active'),
       limit(1)
     ));
-    if (snap.empty) return failPin('Incorrect PIN. Please try again.');
+    if (snap.empty) return failPin('PIN incorrecto. Inténtalo de nuevo.');
 
     paintDots('ok');
     buzz(18);
@@ -919,12 +889,12 @@ async function verify() {
     }, 380);
   } catch (err) {
     console.error(err);
-    failPin('Connection problem. Please try again.');
+    failPin('Problema de conexión. Inténtalo de nuevo.');
   }
 }
 
 // ═════════════════════════════════════════════════════════
-//  SESSION START
+//  INICIO DE SESIÓN
 // ═════════════════════════════════════════════════════════
 async function start() {
   swap('screen-login', 'screen-app');
@@ -949,7 +919,7 @@ async function start() {
 
 function greeting() {
   const h = new Date().getHours();
-  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
 async function loadJob() {
@@ -957,7 +927,7 @@ async function loadJob() {
   try {
     const s = await getDoc(doc(db, 'Jobs', emp.jobId));
     if (s.exists() && s.data().title) $('greet').textContent = s.data().title;
-  } catch { /* optional */ }
+  } catch { /* opcional */ }
 }
 
 function signOut() {
@@ -969,7 +939,7 @@ function signOut() {
 }
 
 // ═════════════════════════════════════════════════════════
-//  DATA
+//  DATOS
 // ═════════════════════════════════════════════════════════
 async function pullShifts() {
   const snap = await getDocs(query(
@@ -992,7 +962,7 @@ function done() {
 }
 
 // ═════════════════════════════════════════════════════════
-//  CLOCK
+//  RELOJ
 // ═════════════════════════════════════════════════════════
 function startTicker() {
   clearInterval(ticker);
@@ -1002,8 +972,8 @@ function startTicker() {
 
 function tick() {
   const n = new Date();
-  $('nowTime').textContent = n.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-  $('nowDate').textContent = n.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  $('nowTime').textContent = n.toLocaleTimeString(LOCALE, { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  $('nowDate').textContent = capFirst(n.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }));
 
   if (openId && inAt) {
     const el = Date.now() - inAt;
@@ -1032,19 +1002,19 @@ async function toggleClock() {
       openId = ref.id;
       inAt   = Date.now();
       paintDial();
-      flash(true, 'Clocked In', `Shift started at ${hhmm(inAt)}`);
+      flash(true, 'Entrada Registrada', `Turno iniciado a las ${hhmm(inAt)}`);
     } else {
       const h = round2((Date.now() - inAt) / 3600000);
       await updateDoc(doc(db, 'ClockIns', openId), { clockOut: Timestamp.now(), hours: h });
       openId = inAt = null;
       paintDial();
-      flash(false, 'Clocked Out', `${h.toFixed(2)} hours recorded`);
+      flash(false, 'Salida Registrada', `${h.toFixed(2)} horas registradas`);
     }
     await pullShifts();
     paintHome();
   } catch (err) {
     console.error(err);
-    toast('Something went wrong. Please try again.', true);
+    toast('Algo salió mal. Inténtalo de nuevo.', true);
   } finally {
     d.disabled = false;
   }
@@ -1055,10 +1025,10 @@ function paintDial() {
   $('dial').classList.toggle('on', on);
   $('dialIcon').hidden = on;
   $('dialBig').hidden  = !on;
-  $('dialSub').textContent = on ? 'Tap to clock out' : 'Clock In';
+  $('dialSub').textContent = on ? 'Marcar Salida' : 'Marcar Entrada';
   $('dialCaption').innerHTML = on
-    ? `<span class="live-chip"><span class="live-dot"></span>On shift since ${hhmm(inAt)}</span>`
-    : 'Tap to start your shift';
+    ? `<span class="live-chip"><span class="live-dot"></span>En turno desde las ${hhmm(inAt)}</span>`
+    : 'Toca para iniciar tu turno';
   if (!on) $('ringFill').style.strokeDashoffset = RING_LEN;
   if (on) tick();
 }
@@ -1069,7 +1039,7 @@ function hoursOn(dayStr) {
 }
 
 // ═════════════════════════════════════════════════════════
-//  HOME
+//  INICIO
 // ═════════════════════════════════════════════════════════
 function paintHome() {
   const { start: ps, end: pe } = range('current');
@@ -1082,7 +1052,7 @@ function paintHome() {
   const rows = done().slice(0, 5);
   $('recentList').innerHTML = rows.length
     ? rows.map((s, i) => shiftRow(s, i)).join('')
-    : blank('clock', 'No shifts yet', 'Your completed shifts will show up here');
+    : blank('clock', 'Aún no hay turnos', 'Tus turnos completados aparecerán aquí');
 }
 
 function shiftRow(s, i) {
@@ -1090,17 +1060,17 @@ function shiftRow(s, i) {
   const h = s.hours ?? (b - a) / 3600000;
   const d = new Date(a);
   return `<div class="row" style="--i:${i}">
-    <div class="row-ic">${MON[d.getMonth()]}<b>${d.getDate()}</b></div>
+    <div class="row-ic">${MES[d.getMonth()]}<b>${d.getDate()}</b></div>
     <div class="row-body">
       <div class="row-main">${hhmm(a)} – ${hhmm(b)}</div>
-      <div class="row-sub">${DAY[d.getDay()]}</div>
+      <div class="row-sub">${DIA[d.getDay()]}</div>
     </div>
     <div class="row-val">${h.toFixed(2)}<small>hrs</small></div>
   </div>`;
 }
 
 // ═════════════════════════════════════════════════════════
-//  HOURS
+//  HORAS
 // ═════════════════════════════════════════════════════════
 function setPeriod(p, btn) {
   if (p === period) return;
@@ -1136,10 +1106,10 @@ async function paintHours() {
 
     $('shiftList').innerHTML = list.length
       ? list.map((s, i) => shiftRow(s, i)).join('')
-      : blank('calendar', 'No shifts this period', 'Try the other pay period');
+      : blank('calendar', 'Sin turnos en este periodo', 'Revisa el otro periodo de pago');
   } catch (err) {
     console.error(err);
-    $('shiftList').innerHTML = blank('alert', 'Could not load hours', 'Check your connection and try again');
+    $('shiftList').innerHTML = blank('alert', 'No se pudieron cargar las horas', 'Revisa tu conexión e inténtalo de nuevo');
   }
 }
 
@@ -1152,19 +1122,19 @@ function drawBars(list) {
   $('chartCard').style.display = '';
 
   const max = Math.max(...days.map(d => byDay[d]), 1);
-  const TALL = 68;   // px for the longest bar
+  const TALL = 68;   // píxeles para la barra más alta
   $('bars').innerHTML = days.map((d, i) => {
     const dt = parseDay(d);
     const h = Math.max(4, Math.round((byDay[d] / max) * TALL));
     return `<div class="bar-col">
       <div class="bar" style="height:${h}px;--i:${i}" title="${byDay[d].toFixed(2)} hrs"></div>
-      <div class="bar-lbl">${DAY[dt.getDay()][0]}${dt.getDate()}</div>
+      <div class="bar-lbl">${INICIAL[dt.getDay()]}${dt.getDate()}</div>
     </div>`;
   }).join('');
 }
 
 // ═════════════════════════════════════════════════════════
-//  PAY
+//  PAGOS
 // ═════════════════════════════════════════════════════════
 async function paintPay() {
   const el = $('payList');
@@ -1175,7 +1145,7 @@ async function paintPay() {
       where('employeeId', '==', emp.id)
     ));
     if (snap.empty) {
-      el.innerHTML = `<div class="card">${blank('pay', 'No statements yet', 'Pay statements appear once your manager posts them')}</div>`;
+      el.innerHTML = `<div class="card">${blank('pay', 'Aún no hay recibos', 'Los recibos aparecerán cuando tu gerente los publique')}</div>`;
       return;
     }
     el.innerHTML = snap.docs.map(d => d.data())
@@ -1190,22 +1160,22 @@ async function paintPay() {
               <div class="pay-amt">${money(gross)}</div>
               <div class="pay-per">${span(p.periodStart, p.periodEnd)}</div>
             </div>
-            <span class="badge ${st}">${cap(st)}</span>
+            <span class="badge ${st}">${statusName(st)}</span>
           </div>
-          <div class="stat"><span class="stat-l">Hours worked</span><span class="stat-v">${Number(hrs).toFixed(2)}</span></div>
-          <div class="stat"><span class="stat-l">Hourly rate</span><span class="stat-v">${money(rate)}</span></div>
-          <div class="stat"><span class="stat-l">Gross pay</span><span class="stat-v">${money(gross)}</span></div>
-          ${p.paidDate ? `<div class="stat"><span class="stat-l">Paid on</span><span class="stat-v">${longDate(p.paidDate)}</span></div>` : ''}
+          <div class="stat"><span class="stat-l">Horas trabajadas</span><span class="stat-v">${Number(hrs).toFixed(2)}</span></div>
+          <div class="stat"><span class="stat-l">Pago por hora</span><span class="stat-v">${money(rate)}</span></div>
+          <div class="stat"><span class="stat-l">Pago bruto</span><span class="stat-v">${money(gross)}</span></div>
+          ${p.paidDate ? `<div class="stat"><span class="stat-l">Pagado el</span><span class="stat-v">${longDate(p.paidDate)}</span></div>` : ''}
         </div>`;
       }).join('');
   } catch (err) {
     console.error(err);
-    el.innerHTML = `<div class="card">${blank('alert', 'Could not load statements', 'Check your connection and try again')}</div>`;
+    el.innerHTML = `<div class="card">${blank('alert', 'No se pudieron cargar los recibos', 'Revisa tu conexión e inténtalo de nuevo')}</div>`;
   }
 }
 
 // ═════════════════════════════════════════════════════════
-//  TIME OFF
+//  PERMISOS
 // ═════════════════════════════════════════════════════════
 async function paintOff() {
   const el = $('offList');
@@ -1216,7 +1186,7 @@ async function paintOff() {
       where('employeeId', '==', emp.id)
     ));
     if (snap.empty) {
-      el.innerHTML = blank('calendar', 'No requests yet', 'Tap Request to ask for time off');
+      el.innerHTML = blank('calendar', 'Aún no hay solicitudes', 'Toca Solicitar para pedir un permiso');
       return;
     }
     el.innerHTML = snap.docs.map(d => d.data())
@@ -1229,12 +1199,12 @@ async function paintOff() {
             <div class="row-sub">${span(r.startDate, r.endDate)}</div>
             ${r.note ? `<div class="row-sub">${esc(r.note)}</div>` : ''}
           </div>
-          <span class="badge ${st}">${cap(st)}</span>
+          <span class="badge ${st}">${statusName(st)}</span>
         </div>`;
       }).join('');
   } catch (err) {
     console.error(err);
-    el.innerHTML = blank('alert', 'Could not load requests', 'Check your connection and try again');
+    el.innerHTML = blank('alert', 'No se pudieron cargar las solicitudes', 'Revisa tu conexión e inténtalo de nuevo');
   }
 }
 
@@ -1244,7 +1214,7 @@ $('typeChips').addEventListener('click', e => {
   buzz(8);
   document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
   c.classList.add('on');
-  offType = c.dataset.t;
+  offType = c.dataset.t;   // se guarda en inglés a propósito
 });
 
 function openSheet() {
@@ -1261,12 +1231,12 @@ async function submitRequest() {
   const a = $('offStart').value, b = $('offEnd').value;
   const note = $('offNote').value.trim();
 
-  if (!a || !b) return toast('Please pick both dates.', true);
-  if (b < a)    return toast('The end date must come after the start.', true);
+  if (!a || !b) return toast('Selecciona ambas fechas.', true);
+  if (b < a)    return toast('La fecha final debe ser posterior a la inicial.', true);
 
   const btn = $('offSubmit');
   btn.disabled = true;
-  btn.textContent = 'Submitting…';
+  btn.textContent = 'Enviando…';
 
   try {
     await addDoc(collection(db, 'TimeOff'), {
@@ -1278,18 +1248,18 @@ async function submitRequest() {
     $('offNote').value = '';
     closeSheet();
     buzz([12, 50, 12]);
-    flash(true, 'Request Sent', 'Your manager will review it shortly');
+    flash(true, 'Solicitud Enviada', 'Tu gerente la revisará pronto');
     paintOff();
   } catch (err) {
     console.error(err);
-    toast('Could not submit. Please try again.', true);
+    toast('No se pudo enviar. Inténtalo de nuevo.', true);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Submit Request';
+    btn.textContent = 'Enviar Solicitud';
   }
 }
 
-// swipe the sheet down to dismiss
+// desliza la hoja hacia abajo para cerrarla
 (() => {
   const panel = $('sheetPanel');
   let y0 = null, dy = 0;
@@ -1316,7 +1286,7 @@ async function submitRequest() {
 })();
 
 // ═════════════════════════════════════════════════════════
-//  NAVIGATION
+//  NAVEGACIÓN
 // ═════════════════════════════════════════════════════════
 function go(name, silent) {
   if (name === tab && !silent) return;
@@ -1324,9 +1294,7 @@ function go(name, silent) {
   tab = name;
 
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.section').forEach(s => {
-    s.classList.remove('active', 'slide-l', 'slide-r');
-  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active', 'slide-l', 'slide-r'));
 
   const sec = $('sec-' + name);
   sec.classList.add('active');
@@ -1338,7 +1306,7 @@ function go(name, silent) {
   if (name === 'off')   paintOff();
 }
 
-// swipe between tabs
+// desliza para cambiar de pestaña
 (() => {
   const el = $('scroller');
   let x0 = 0, y0 = 0, t0 = 0;
@@ -1355,7 +1323,7 @@ function go(name, silent) {
   }, { passive: true });
 })();
 
-// refresh when the app comes back to the foreground
+// recarga al volver a la aplicación
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden || !emp) return;
   tick();
@@ -1364,11 +1332,11 @@ document.addEventListener('visibilitychange', async () => {
     detectOpen();
     if (tab === 'home')  paintHome();
     if (tab === 'hours') paintHours();
-  } catch { /* offline — keep showing cached values */ }
+  } catch { /* sin conexión — se conservan los datos en pantalla */ }
 });
 
 // ═════════════════════════════════════════════════════════
-//  FEEDBACK
+//  AVISOS
 // ═════════════════════════════════════════════════════════
 function flash(good, title, sub) {
   const f = $('flash');
@@ -1376,7 +1344,7 @@ function flash(good, title, sub) {
   $('flashSub').textContent   = sub;
   $('flashRing').classList.toggle('out', !good);
   f.classList.remove('show');
-  void f.offsetWidth;               // restart the animation
+  void f.offsetWidth;               // reinicia la animación
   f.classList.add('show');
   setTimeout(() => f.classList.remove('show'), 1750);
 }
@@ -1393,7 +1361,7 @@ function toast(msg, bad) {
 
 function buzz(p) { try { navigator.vibrate?.(p); } catch {} }
 
-// animated number counter
+// contador animado
 function countTo(el, to, dp, isMoney) {
   const from = parseFloat(String(el.textContent).replace(/[^0-9.-]/g, '')) || 0;
   if (Math.abs(to - from) < 0.005) { el.textContent = isMoney ? money(to) : to.toFixed(dp); return; }
@@ -1408,7 +1376,7 @@ function countTo(el, to, dp, isMoney) {
 }
 
 // ═════════════════════════════════════════════════════════
-//  PAY PERIODS  (semi-monthly: 1–15, 16–end)
+//  PERIODOS DE PAGO  (quincenal: 1–15, 16–fin de mes)
 // ═════════════════════════════════════════════════════════
 function range(which) {
   const n = new Date();
@@ -1431,15 +1399,18 @@ const ymd   = (y, m, d) => `${y}-${p2(m + 1)}-${p2(d)}`;
 const endOf = (y, m) => new Date(y, m + 1, 0).getDate();
 
 // ═════════════════════════════════════════════════════════
-//  HELPERS
+//  UTILIDADES
 // ═════════════════════════════════════════════════════════
-const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MES        = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MES_LARGO  = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIA        = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const INICIAL    = ['D','L','M','X','J','V','S'];   // convención española para miércoles = X
 
-const ms     = ts => ts?.toMillis?.() ?? 0;
-const p2     = n => String(n).padStart(2, '0');
-const round2 = n => Math.round(n * 100) / 100;
-const cap    = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+const ms       = ts => ts?.toMillis?.() ?? 0;
+const p2       = n => String(n).padStart(2, '0');
+const round2   = n => Math.round(n * 100) / 100;
+const cap      = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+const capFirst = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
 
 function today() { const n = new Date(); return ymd(n.getFullYear(), n.getMonth(), n.getDate()); }
 
@@ -1450,7 +1421,7 @@ function parseDay(s) {
 }
 
 function hhmm(t) {
-  return t ? new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
+  return t ? new Date(t).toLocaleTimeString(LOCALE, { hour: 'numeric', minute: '2-digit' }) : '—';
 }
 
 function clockFmt(msTotal) {
@@ -1460,41 +1431,49 @@ function clockFmt(msTotal) {
   return `${h}:${p2(m)}:${p2(s)}`;
 }
 
+// "5 de agosto de 2026"
 function longDate(s) {
   const d = parseDay(s);
-  return d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : (s || '—');
+  return d ? `${d.getDate()} de ${MES_LARGO[d.getMonth()]} de ${d.getFullYear()}` : (s || '—');
 }
 
-// "Aug 1 – 15, 2026" inside one month, otherwise "Aug 16 – Sep 2, 2026"
+// "1 – 15 Ago 2026" dentro del mismo mes, si no "16 Ago – 2 Sep 2026"
 function span(a, b) {
   const x = parseDay(a), y = parseDay(b);
   if (!x || !y) return `${a || '—'} – ${b || '—'}`;
   const same = x.getMonth() === y.getMonth() && x.getFullYear() === y.getFullYear();
-  const left = `${MON[x.getMonth()]} ${x.getDate()}`;
-  const right = same ? `${y.getDate()}, ${y.getFullYear()}`
-                     : `${MON[y.getMonth()]} ${y.getDate()}, ${y.getFullYear()}`;
-  return `${left} – ${right}`;
+  return same
+    ? `${x.getDate()} – ${y.getDate()} ${MES[y.getMonth()]} ${y.getFullYear()}`
+    : `${x.getDate()} ${MES[x.getMonth()]} – ${y.getDate()} ${MES[y.getMonth()]} ${y.getFullYear()}`;
 }
 
 function money(n) {
   return Number(n || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-// safe for use as a CSS class and as label text
+// normaliza el valor guardado para usarlo como clase CSS (se mantiene en inglés)
 function status(s) {
   return String(s || 'pending').toLowerCase().replace(/[^a-z]/g, '') || 'pending';
 }
 
-function typeName(t) {
-  return ({ vacation: 'Vacation', sick: 'Sick leave', personal: 'Personal day', unpaid: 'Unpaid leave' })[t]
-      || esc(cap(t || 'Request'));
-}
+// solo la etiqueta visible se traduce; el valor en Firestore no cambia
+const ESTADOS = {
+  pending: 'Pendiente', approved: 'Aprobado', paid: 'Pagado',
+  denied: 'Rechazado', rejected: 'Rechazado', cancelled: 'Cancelado', canceled: 'Cancelado'
+};
+function statusName(s) { return ESTADOS[s] || cap(s); }
+
+const TIPOS = {
+  vacation: 'Vacaciones', sick: 'Enfermedad',
+  personal: 'Día personal', unpaid: 'Sin goce de sueldo'
+};
+function typeName(t) { return TIPOS[t] || esc(cap(t || 'Solicitud')); }
 
 function initials(n) {
   return (n || 'U').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function firstName(n) { return (n || 'Employee').trim().split(/\s+/)[0]; }
+function firstName(n) { return (n || 'Empleado').trim().split(/\s+/)[0]; }
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c =>
@@ -1530,20 +1509,20 @@ function skRows(n) {
 
 function sk(id, n) { $(id).innerHTML = skRows(n); }
 
-// installable on Android home screens
+// se puede instalar en la pantalla de inicio en Android
 try {
   const mf = {
-    name: 'DomCub Clock', short_name: 'DomCub',
-    start_url: '.', display: 'standalone',
+    name: 'El Aguila', short_name: 'El Aguila',
+    lang: 'es', start_url: '.', display: 'standalone',
     background_color: '#1a1f36', theme_color: '#1a1f36'
   };
   const link = document.createElement('link');
   link.rel = 'manifest';
   link.href = URL.createObjectURL(new Blob([JSON.stringify(mf)], { type: 'application/json' }));
   document.head.appendChild(link);
-} catch { /* not critical */ }
+} catch { /* no es crítico */ }
 
-// expose for inline handlers
+// se exponen para los manejadores del HTML
 Object.assign(window, { toggleClock, signOut, go, setPeriod, openSheet, closeSheet, submitRequest });
 </script>
 </body>
