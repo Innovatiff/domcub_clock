@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a1f36">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DomCub Clock">
+<meta name="apple-mobile-web-app-title" content="DomCub">
 <title>DomCub Clock</title>
 <style>
 :root {
@@ -34,575 +35,769 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+
+  /* motion */
+  --ease: cubic-bezier(.4,0,.2,1);
+  --spring: cubic-bezier(.34,1.56,.64,1);
+  --sheet-ease: cubic-bezier(.32,.72,0,1);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overscroll-behavior-y: none; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: 'cv02','cv03','cv04','cv11';
+  text-rendering: optimizeLegibility;
+  touch-action: manipulation;
+  overflow: hidden;
 }
 
-button, input, select, textarea { font-family: inherit; }
+button, input, select, textarea { font-family: inherit; color: inherit; }
+button { touch-action: manipulation; }
 
-.screen { display: none; }
+/* prevent accidental text selection on chrome-like UI */
+.noselect, .tabbar, .appbar, .dial-wrap, .keypad, .seg { user-select: none; -webkit-user-select: none; }
+
+/* ═══════════ SCREENS ═══════════ */
+.screen {
+  position: fixed; inset: 0;
+  display: none; flex-direction: column;
+}
 .screen.active { display: flex; }
+.screen.enter { animation: screenIn .42s var(--ease) both; }
+.screen.leave { animation: screenOut .3s var(--ease) both; }
 
-.num { font-variant-numeric: tabular-nums; }
+@keyframes screenIn  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes screenOut { from { opacity: 1; } to { opacity: 0; transform: scale(1.02); } }
 
-/* ═══════════════════════════════════
-   LOADER
-═══════════════════════════════════ */
-#screen-loader {
+/* ═══════════ BOOT ═══════════ */
+#screen-boot {
   align-items: center; justify-content: center;
-  min-height: 100vh; background: var(--sidebar-bg);
-  flex-direction: column; gap: 18px;
+  background: var(--sidebar-bg); gap: 20px;
 }
-
 .spinner {
-  width: 34px; height: 34px;
-  border: 2.5px solid rgba(255,255,255,0.12);
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,.12);
   border-top-color: var(--primary);
-  border-radius: 50%;
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.boot-text { color: var(--text-light); font-size: 13px; letter-spacing: .2px; }
 
-.loader-text { color: var(--text-light); font-size: 13px; letter-spacing: .2px; }
-
-/* ═══════════════════════════════════
-   LOGIN
-═══════════════════════════════════ */
+/* ═══════════ LOGIN ═══════════ */
 #screen-login {
-  flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; padding: 32px 24px;
+  align-items: center; justify-content: center;
+  padding: 24px calc(24px + env(safe-area-inset-left, 0px)) calc(24px + var(--safe-bot));
   background:
-    radial-gradient(900px 500px at 50% -10%, rgba(79,70,229,.28), transparent 65%),
+    radial-gradient(720px 420px at 50% 4%, rgba(79,70,229,.30), transparent 62%),
+    radial-gradient(520px 380px at 88% 96%, rgba(6,182,212,.14), transparent 60%),
     var(--sidebar-bg);
+  overflow-y: auto;
 }
 
-.brand { text-align: center; margin-bottom: 30px; }
+/* auto margins keep it centred when there's room, scrollable when there isn't */
+.brand { text-align: center; margin: auto auto 26px; animation: dropIn .6s var(--spring) both; }
+@keyframes dropIn { from { opacity: 0; transform: translateY(-14px) scale(.9); } to { opacity: 1; transform: none; } }
 
 .brand-mark {
-  width: 56px; height: 56px; margin: 0 auto 18px;
-  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 10px 28px rgba(79,70,229,.45), inset 0 1px 0 rgba(255,255,255,.18);
+  width: 60px; height: 60px; margin: 0 auto 16px;
+  background: linear-gradient(150deg, #6366f1, var(--primary-dark));
+  border-radius: 18px;
+  display: grid; place-items: center;
+  box-shadow: 0 12px 30px rgba(79,70,229,.5), inset 0 1px 0 rgba(255,255,255,.22);
 }
-.brand-mark svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
+.brand-mark svg { width: 30px; height: 30px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
+.brand-mark .hand { transform-origin: 12px 12px; animation: sweep 6s linear infinite; }
+@keyframes sweep { to { transform: rotate(360deg); } }
 
-.brand-name {
-  color: #fff; font-size: 19px; font-weight: 700;
-  letter-spacing: -.2px; margin-bottom: 5px;
-}
-.brand-tag {
-  color: var(--text-light); font-size: 12px; font-weight: 500;
-  letter-spacing: .8px; text-transform: uppercase;
-}
+.brand-name { color: #fff; font-size: 21px; font-weight: 700; letter-spacing: -.3px; }
+.brand-tag  { color: var(--text-light); font-size: 11.5px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
 
 .pin-card {
-  background: var(--card-bg); border-radius: 16px;
-  padding: 26px 22px 22px; width: 100%; max-width: 330px;
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,.06);
+  background: var(--card-bg); border-radius: 22px;
+  padding: 26px 20px 20px; width: 100%; max-width: 340px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  animation: dropIn .6s var(--spring) .1s both;
+  margin-bottom: auto;
 }
 
-.pin-label {
-  font-size: 11px; font-weight: 600; color: var(--text-muted);
-  text-align: center; margin-bottom: 18px;
-  letter-spacing: .8px; text-transform: uppercase;
-}
+.pin-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: center; letter-spacing: 1px; text-transform: uppercase; }
 
-.pin-dots { display: flex; justify-content: center; gap: 13px; margin-bottom: 26px; }
-
+.pin-dots { display: flex; justify-content: center; gap: 14px; margin: 20px 0 24px; }
 .pin-dot {
-  width: 11px; height: 11px; border-radius: 50%;
-  border: 1.5px solid var(--border); background: transparent;
-  transition: transform .18s cubic-bezier(.34,1.56,.64,1), background .15s, border-color .15s;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  transition: transform .26s var(--spring), background .18s, border-color .18s;
 }
-.pin-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.18); }
-.pin-dot.error  { background: var(--danger);  border-color: var(--danger);  transform: scale(1.18); }
+.pin-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.25); }
+.pin-dot.error  { background: var(--danger);  border-color: var(--danger);  transform: scale(1.25); }
+.pin-dot.ok     { background: var(--success); border-color: var(--success); transform: scale(1.25); }
 
-.pin-dots.shake { animation: shake .4s; }
+.pin-dots.shake { animation: shake .45s var(--ease); }
 @keyframes shake {
   0%,100% { transform: translateX(0); }
-  20%     { transform: translateX(-7px); }
-  40%     { transform: translateX(7px); }
-  60%     { transform: translateX(-4px); }
-  80%     { transform: translateX(4px); }
+  15% { transform: translateX(-9px); } 30% { transform: translateX(9px); }
+  45% { transform: translateX(-6px); } 60% { transform: translateX(6px); }
+  80% { transform: translateX(-2px); }
 }
 
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
-
+.keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
 .key {
-  height: 56px; border: 1px solid transparent; border-radius: var(--radius);
-  background: var(--bg); font-size: 21px; font-weight: 500; color: var(--text);
-  cursor: pointer; user-select: none;
-  transition: background .12s, transform .08s, border-color .12s;
+  height: 62px; border: none; border-radius: 16px;
+  background: var(--bg); font-size: 23px; font-weight: 500;
+  cursor: pointer; position: relative; overflow: hidden;
   font-variant-numeric: tabular-nums;
+  transition: transform .12s var(--ease), background .16s;
 }
-.key:active { background: var(--primary-light); border-color: var(--primary); transform: scale(.95); }
-.key.aux { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: .4px; }
-.key.del { font-size: 17px; color: var(--text-muted); }
+.key:active { transform: scale(.93); background: var(--primary-light); }
+.key.aux { font-size: 11.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .6px; }
+.key.del { color: var(--text-muted); }
+.key.del svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 
-.pin-error {
-  text-align: center; color: var(--danger);
-  font-size: 12.5px; font-weight: 500;
-  margin-top: 14px; min-height: 17px;
-}
+.pin-msg { text-align: center; font-size: 12.5px; font-weight: 500; margin-top: 15px; min-height: 18px; color: var(--danger); }
 
-/* ═══════════════════════════════════
-   PORTAL
-═══════════════════════════════════ */
-#screen-portal { flex-direction: column; min-height: 100vh; }
+/* ═══════════ APP SHELL ═══════════ */
+#screen-app { background: var(--bg); }
 
-.portal-header {
-  background: var(--sidebar-bg); color: #fff;
-  padding: 14px 18px; padding-top: calc(14px + env(safe-area-inset-top));
+.appbar {
+  background: var(--sidebar-bg); color: #fff; flex-shrink: 0;
+  padding: calc(14px + var(--safe-top)) 18px 16px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  position: sticky; top: 0; z-index: 100;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 6px 22px rgba(26,31,54,.22);
+  position: relative; z-index: 20;
 }
-
-.portal-header-left { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.appbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 
 .avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 14px; color: #fff; flex-shrink: 0;
-  letter-spacing: .3px;
-  box-shadow: 0 0 0 1.5px rgba(255,255,255,.14);
+  width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
+  background: linear-gradient(150deg, #6366f1, var(--primary-dark));
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 15px; letter-spacing: .3px;
+  box-shadow: 0 3px 12px rgba(79,70,229,.4);
 }
+.greet { font-size: 11.5px; color: var(--text-light); font-weight: 500; }
+.uname { font-size: 16px; font-weight: 700; letter-spacing: -.3px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.portal-name {
-  font-weight: 600; font-size: 14.5px; letter-spacing: -.1px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.icon-btn {
+  width: 38px; height: 38px; flex-shrink: 0; border: none; border-radius: 12px;
+  background: rgba(255,255,255,.09); display: grid; place-items: center;
+  cursor: pointer; transition: transform .14s var(--ease), background .16s;
 }
-.portal-role {
-  font-size: 11.5px; color: var(--text-light); margin-top: 1px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.icon-btn:active { transform: scale(.9); background: rgba(255,255,255,.18); }
+.icon-btn svg { width: 19px; height: 19px; stroke: rgba(255,255,255,.9); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 
-.logout-btn {
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08);
-  color: rgba(255,255,255,.85);
-  padding: 7px 13px; border-radius: var(--radius-sm);
-  font-size: 12.5px; font-weight: 500; cursor: pointer; flex-shrink: 0;
-  transition: background .15s;
+/* scroll area */
+.scroller {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+  padding: 18px 16px calc(96px + var(--safe-bot));
 }
-.logout-btn:active { background: rgba(255,255,255,.16); }
+.page { max-width: 520px; margin: 0 auto; }
 
-.portal-body {
-  flex: 1; padding: 18px 16px 96px;
-  max-width: 500px; margin: 0 auto; width: 100%;
+/* ═══════════ TABS ═══════════ */
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; padding-bottom: var(--safe-bot);
+  background: rgba(255,255,255,.86);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  border-top: 1px solid rgba(226,232,240,.9);
 }
-
-/* ── TAB BAR ── */
-.tabs {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
-  border-top: 1px solid var(--border);
-  display: flex; z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.tab-btn {
-  flex: 1; border: none; background: transparent;
-  padding: 9px 4px 10px; position: relative;
+.tab {
+  flex: 1; border: none; background: none; cursor: pointer;
+  padding: 9px 2px 9px; position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  cursor: pointer; color: var(--text-light);
-  font-size: 10.5px; font-weight: 500; letter-spacing: .1px;
-  transition: color .18s;
+  color: var(--text-light); font-size: 10.5px; font-weight: 600; letter-spacing: .1px;
+  transition: color .22s var(--ease);
 }
-.tab-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.tab-btn.active { color: var(--primary); font-weight: 600; }
-.tab-btn::before {
-  content: ''; position: absolute; top: 0; left: 50%;
-  width: 0; height: 2px; background: var(--primary);
-  border-radius: 0 0 2px 2px;
-  transform: translateX(-50%); transition: width .22s ease;
+.tab svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform .34s var(--spring); }
+.tab.active { color: var(--primary); }
+.tab.active svg { transform: translateY(-2px) scale(1.1); }
+.tab::after {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 0; height: 3px; border-radius: 0 0 3px 3px; background: var(--primary);
+  transition: width .3s var(--spring);
 }
-.tab-btn.active::before { width: 26px; }
+.tab.active::after { width: 30px; }
 
-/* ── SECTIONS ── */
+/* ═══════════ SECTIONS ═══════════ */
 .section { display: none; }
-.section.active { display: block; animation: fadeUp .26s ease; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+.section.active { display: block; }
+.section.slide-l { animation: slideL .34s var(--ease) both; }
+.section.slide-r { animation: slideR .34s var(--ease) both; }
+@keyframes slideL { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes slideR { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
 
-.section-heading {
-  font-size: 20px; font-weight: 700; letter-spacing: -.4px;
-  margin-bottom: 14px; color: var(--text);
+.head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
 }
+.head h1 { font-size: 24px; font-weight: 800; letter-spacing: -.7px; }
 
-/* ── CARDS ── */
+/* ═══════════ CARDS ═══════════ */
 .card {
   background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 18px;
-  box-shadow: var(--shadow); margin-bottom: 12px;
+  border-radius: 18px; padding: 18px; margin-bottom: 12px;
+  box-shadow: var(--shadow);
 }
-
 .card-title {
-  font-size: 11px; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: .7px; margin-bottom: 14px;
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
 }
 
-/* ═══════════════════════════════════
-   CLOCK
-═══════════════════════════════════ */
-.clock-card { text-align: center; padding: 22px 18px 18px; }
+/* fade-up on mount */
+.rise { animation: rise .5s var(--ease) backwards; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
-.clock-time {
-  font-size: 46px; font-weight: 700; letter-spacing: -1.8px;
-  line-height: 1; color: var(--text); font-variant-numeric: tabular-nums;
+/* ═══════════ HOME / DIAL ═══════════ */
+.now { text-align: center; margin-bottom: 4px; }
+.now-time {
+  font-size: 15px; font-weight: 600; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; letter-spacing: -.2px;
 }
-.clock-time .sec { font-size: 24px; font-weight: 600; color: var(--text-light); letter-spacing: -.6px; }
+.now-date { font-size: 12.5px; color: var(--text-light); margin-top: 3px; font-weight: 500; }
 
-.clock-date { font-size: 13px; color: var(--text-muted); margin-top: 9px; font-weight: 500; }
-
-.clock-status {
-  display: inline-flex; align-items: center; gap: 7px;
-  margin-top: 16px; padding: 6px 13px; border-radius: 99px;
-  font-size: 12.5px; font-weight: 600; letter-spacing: .1px;
-  border: 1px solid transparent;
-}
-.clock-status.out { background: var(--bg); color: var(--text-muted); border-color: var(--border); }
-.clock-status.in  { background: var(--success-light); color: #047857; border-color: rgba(16,185,129,.25); }
-
-.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-.clock-status.in .status-dot { animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); }
-  50%     { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+.dial-wrap {
+  position: relative; width: 252px; height: 252px;
+  margin: 14px auto 6px; display: grid; place-items: center;
 }
 
-.clock-btn {
-  display: block; width: 100%; padding: 17px; border: none;
-  border-radius: var(--radius); font-size: 16px; font-weight: 600;
-  cursor: pointer; margin-top: 20px; letter-spacing: .2px; color: #fff;
-  transition: filter .15s, transform .1s, box-shadow .15s;
+.ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-linecap: round; }
+.ring .track { stroke: var(--border); stroke-width: 7; }
+.ring .fill {
+  stroke: var(--success); stroke-width: 7;
+  stroke-dasharray: 691.15; stroke-dashoffset: 691.15;
+  transition: stroke-dashoffset .9s var(--ease);
+  filter: drop-shadow(0 0 6px rgba(16,185,129,.45));
 }
-.clock-btn:active { transform: scale(.985); filter: brightness(.94); }
-.clock-btn:disabled { opacity: .55; cursor: not-allowed; }
-.clock-btn.in  { background: var(--success); box-shadow: 0 4px 14px rgba(16,185,129,.3); }
-.clock-btn.out { background: var(--danger);  box-shadow: 0 4px 14px rgba(239,68,68,.28); }
 
-.elapsed {
-  color: var(--text-muted); font-size: 12.5px; margin-top: 12px;
-  min-height: 17px; font-variant-numeric: tabular-nums;
+.dial {
+  position: relative; width: 204px; height: 204px; border-radius: 50%;
+  border: none; cursor: pointer; color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  background: linear-gradient(155deg, #6366f1, var(--primary-dark));
+  box-shadow: 0 16px 38px rgba(79,70,229,.42), inset 0 2px 0 rgba(255,255,255,.18);
+  transition: transform .18s var(--ease), box-shadow .4s var(--ease), background .5s var(--ease);
 }
-.elapsed b { color: var(--text); font-weight: 600; }
+.dial:active { transform: scale(.955); }
+.dial:disabled { opacity: .65; cursor: wait; }
 
-/* ── ROWS ── */
+.dial.on {
+  background: linear-gradient(155deg, #2b3355, var(--sidebar-bg));
+  box-shadow: 0 16px 38px rgba(26,31,54,.4), inset 0 2px 0 rgba(255,255,255,.1);
+  animation: breathe 3.2s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100% { box-shadow: 0 16px 38px rgba(26,31,54,.4), inset 0 2px 0 rgba(255,255,255,.1), 0 0 0 0 rgba(16,185,129,.35); }
+  50%     { box-shadow: 0 16px 38px rgba(26,31,54,.4), inset 0 2px 0 rgba(255,255,255,.1), 0 0 0 14px rgba(16,185,129,0); }
+}
+
+.dial-icon { width: 34px; height: 34px; stroke: #fff; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 2px; }
+.dial-big {
+  font-size: 34px; font-weight: 800; letter-spacing: -1.2px;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.dial-sub { font-size: 10.5px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; opacity: .82; }
+
+.live-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 99px; margin-top: 2px;
+  background: var(--success-light); color: #047857;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .2px;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1.6s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+.dial-caption { text-align: center; font-size: 12.5px; color: var(--text-muted); margin-top: 10px; min-height: 18px; font-weight: 500; }
+
+/* quick stats */
+.quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0 12px; }
+.quick-item {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px; text-align: center; box-shadow: var(--shadow);
+}
+.quick-val { font-size: 22px; font-weight: 800; letter-spacing: -.7px; font-variant-numeric: tabular-nums; }
+.quick-lbl { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-top: 4px; }
+
+/* ═══════════ LIST ROWS ═══════════ */
 .row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 11px 0; border-bottom: 1px solid var(--border); gap: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  animation: rowIn .42s var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * 48ms);
 }
 .row:last-child { border-bottom: none; }
 .row:first-child { padding-top: 0; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
 
-.row-main  { font-size: 14px; font-weight: 500; letter-spacing: -.1px; }
-.row-sub   { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
-.row-value { font-weight: 600; font-size: 14px; color: var(--primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row-ic {
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px;
+  line-height: 1.1; text-align: center;
+}
+.row-ic b { display: block; font-size: 14px; font-weight: 800; letter-spacing: -.3px; }
+.row-body { flex: 1; min-width: 0; }
+.row-main { font-size: 14.5px; font-weight: 600; letter-spacing: -.1px; }
+.row-sub  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.row-val  { font-size: 14.5px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row-val small { font-size: 11px; color: var(--text-light); font-weight: 600; margin-left: 2px; }
 
-/* ═══════════════════════════════════
-   HOURS
-═══════════════════════════════════ */
-.period-select {
-  width: 100%; padding: 11px 14px;
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 14px; font-weight: 500; color: var(--text);
-  background: var(--card-bg); margin-bottom: 12px;
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat: no-repeat; background-position: right 13px center;
+/* ═══════════ SEGMENTED ═══════════ */
+.seg {
+  position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  background: #eef1f6; border-radius: 13px; padding: 4px; margin-bottom: 14px;
 }
-.period-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+.seg-thumb {
+  position: absolute; top: 4px; bottom: 4px; left: 4px;
+  width: calc(50% - 4px); background: var(--card-bg);
+  border-radius: 10px; box-shadow: var(--shadow);
+  transition: transform .34s var(--spring);
+}
+.seg-btn {
+  position: relative; z-index: 1; border: none; background: none; cursor: pointer;
+  padding: 9px 6px; font-size: 13px; font-weight: 600; color: var(--text-muted);
+  transition: color .26s var(--ease);
+}
+.seg-btn.active { color: var(--text); }
 
-.hero-stat { text-align: center; padding: 6px 0 18px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
-.hero-stat .val {
-  font-size: 40px; font-weight: 700; color: var(--text);
-  letter-spacing: -1.6px; line-height: 1; font-variant-numeric: tabular-nums;
+/* ═══════════ STATS ═══════════ */
+.hero { text-align: center; padding: 4px 0 16px; border-bottom: 1px solid var(--border); }
+.hero-val {
+  font-size: 46px; font-weight: 800; letter-spacing: -2px; line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
-.hero-stat .val span { font-size: 17px; font-weight: 600; color: var(--text-light); margin-left: 3px; letter-spacing: -.2px; }
-.hero-stat .lbl {
-  font-size: 11px; color: var(--text-muted); margin-top: 8px;
-  text-transform: uppercase; letter-spacing: .7px; font-weight: 600;
-}
+.hero-val .unit { font-size: 17px; font-weight: 700; color: var(--text-light); margin-left: 4px; letter-spacing: -.2px; }
+.hero-lbl { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-top: 9px; }
 
-.stat-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13.5px;
+.stat {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13.5px;
 }
-.stat-row:last-child { border-bottom: none; }
-.stat-label { color: var(--text-muted); }
-.stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat:last-child { border-bottom: none; }
+.stat-l { color: var(--text-muted); font-weight: 500; }
+.stat-v { font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* ═══════════════════════════════════
-   PAY
-═══════════════════════════════════ */
-.pay-head {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+/* mini bar chart */
+.bars { display: flex; align-items: flex-end; gap: 5px; margin: 4px 0 10px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
+.bar {
+  width: 100%; max-width: 26px; border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(180deg, #818cf8, var(--primary));
+  transform-origin: bottom; animation: growBar .6s var(--ease) backwards;
+  animation-delay: calc(var(--i,0) * 55ms); min-height: 3px;
 }
-.pay-gross {
-  font-size: 30px; font-weight: 700; color: var(--text);
-  letter-spacing: -1px; line-height: 1.1; font-variant-numeric: tabular-nums;
-}
-.pay-period { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
+@keyframes growBar { from { transform: scaleY(0); opacity: .3; } to { transform: scaleY(1); opacity: 1; } }
+.bar-lbl { font-size: 9.5px; color: var(--text-light); font-weight: 600; white-space: nowrap; }
 
-/* ═══════════════════════════════════
-   FORMS
-═══════════════════════════════════ */
-.form-group { margin-bottom: 14px; }
-.form-label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: var(--text-muted); margin-bottom: 6px; letter-spacing: .1px;
+/* ═══════════ PAY ═══════════ */
+.pay-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border);
 }
-.form-input, .form-select, .form-textarea {
-  width: 100%; padding: 12px 13px;
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 15px; color: var(--text); background: var(--card-bg);
-  transition: border-color .15s, box-shadow .15s;
-}
-.form-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat: no-repeat; background-position: right 13px center;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  outline: none; border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,70,229,.1);
-}
-.form-textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
+.pay-amt { font-size: 32px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.pay-per { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
 
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-.submit-btn {
-  display: block; width: 100%; padding: 14px;
-  background: var(--primary); color: #fff; border: none;
-  border-radius: var(--radius); font-size: 15px; font-weight: 600;
-  cursor: pointer; letter-spacing: .1px; margin-top: 4px;
-  box-shadow: 0 3px 12px rgba(79,70,229,.24);
-  transition: background .15s, transform .1s;
-}
-.submit-btn:active { background: var(--primary-dark); transform: scale(.985); }
-.submit-btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
-
-/* ── BADGES ── */
+/* ═══════════ BADGES ═══════════ */
 .badge {
-  padding: 3.5px 10px; border-radius: 99px;
-  font-size: 11px; font-weight: 600; white-space: nowrap;
-  border: 1px solid transparent; letter-spacing: .1px;
+  padding: 4px 11px; border-radius: 99px; font-size: 11px; font-weight: 700;
+  white-space: nowrap; border: 1px solid transparent; letter-spacing: .1px;
 }
-.badge.pending  { background: var(--warning-light); color: #b45309; border-color: rgba(245,158,11,.22); }
-.badge.approved { background: var(--success-light); color: #047857; border-color: rgba(16,185,129,.22); }
-.badge.paid     { background: var(--success-light); color: #047857; border-color: rgba(16,185,129,.22); }
+.badge.pending  { background: var(--warning-light); color: #b45309; border-color: rgba(245,158,11,.24); }
+.badge.approved,
+.badge.paid     { background: var(--success-light); color: #047857; border-color: rgba(16,185,129,.24); }
 .badge.denied,
-.badge.rejected { background: var(--danger-light);  color: #b91c1c; border-color: rgba(239,68,68,.22); }
+.badge.rejected { background: var(--danger-light);  color: #b91c1c; border-color: rgba(239,68,68,.24); }
 
-/* ── EMPTY / SKELETON ── */
-.empty { text-align: center; padding: 28px 16px; color: var(--text-light); font-size: 13.5px; }
-.empty svg { width: 30px; height: 30px; stroke: var(--text-light); fill: none; stroke-width: 1.5; opacity: .55; margin-bottom: 9px; }
+/* ═══════════ BUTTONS ═══════════ */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 15px; border: none; border-radius: 15px;
+  background: var(--primary); color: #fff; cursor: pointer;
+  font-size: 15px; font-weight: 700; letter-spacing: .1px;
+  box-shadow: 0 6px 18px rgba(79,70,229,.3);
+  transition: transform .14s var(--ease), background .18s, box-shadow .18s;
+}
+.btn:active { transform: scale(.975); background: var(--primary-dark); }
+.btn:disabled { opacity: .55; box-shadow: none; cursor: not-allowed; }
+.btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
-.skel-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); }
-.skel-row:last-child { border-bottom: none; }
-.skel {
-  height: 11px; border-radius: 4px;
-  background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 37%, #eef2f7 63%);
-  background-size: 400% 100%; animation: shimmer 1.3s ease infinite;
+.btn-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border: none; border-radius: 12px;
+  background: var(--primary); color: #fff; cursor: pointer;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(79,70,229,.28);
+  transition: transform .14s var(--ease);
+}
+.btn-sm:active { transform: scale(.94); }
+.btn-sm svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; }
+
+/* ═══════════ FORMS ═══════════ */
+.fgroup { margin-bottom: 14px; }
+.flabel { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 7px; }
+.finput, .fselect, .ftext {
+  width: 100%; padding: 13px 14px; border: 1.5px solid var(--border);
+  border-radius: 13px; font-size: 16px; background: var(--bg);
+  transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.fselect {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.finput:focus, .fselect:focus, .ftext:focus {
+  outline: none; border-color: var(--primary); background: var(--card-bg);
+  box-shadow: 0 0 0 4px rgba(79,70,229,.1);
+}
+.ftext { min-height: 84px; resize: none; line-height: 1.5; }
+.fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* type chooser */
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chip {
+  padding: 12px 10px; border: 1.5px solid var(--border); border-radius: 13px;
+  background: var(--bg); cursor: pointer; text-align: center;
+  font-size: 13px; font-weight: 600; color: var(--text-muted);
+  transition: all .2s var(--ease);
+}
+.chip.on {
+  border-color: var(--primary); background: var(--primary-light);
+  color: var(--primary-dark); transform: scale(1.02);
+}
+
+/* ═══════════ SHEET ═══════════ */
+.sheet { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.sheet.open { pointer-events: auto; }
+.sheet-bd {
+  position: absolute; inset: 0; background: rgba(15,23,42,.5);
+  opacity: 0; transition: opacity .34s var(--ease);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+.sheet.open .sheet-bd { opacity: 1; }
+.sheet-panel {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--card-bg); border-radius: 24px 24px 0 0;
+  padding: 10px 18px calc(20px + var(--safe-bot));
+  max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateY(101%);
+  transition: transform .42s var(--sheet-ease);
+  box-shadow: 0 -8px 40px rgba(0,0,0,.2);
+}
+.sheet.open .sheet-panel { transform: none; }
+.sheet-panel.dragging { transition: none; }
+
+.grabber { width: 40px; height: 4.5px; border-radius: 99px; background: var(--border); margin: 0 auto 16px; }
+.sheet-title { font-size: 19px; font-weight: 800; letter-spacing: -.4px; margin-bottom: 16px; }
+
+/* ═══════════ SUCCESS FLASH ═══════════ */
+.flash {
+  position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
+  pointer-events: none; opacity: 0; background: rgba(248,250,252,.72);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.flash.show { animation: flashSeq 1.7s var(--ease) forwards; }
+@keyframes flashSeq {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  78%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.flash-in { text-align: center; transform: scale(.8); }
+.flash.show .flash-in { animation: popIn .55s var(--spring) .05s forwards; }
+@keyframes popIn { to { transform: scale(1); } }
+
+.flash-ring {
+  width: 88px; height: 88px; margin: 0 auto 16px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--success-light);
+}
+.flash-ring.out { background: var(--primary-light); }
+.flash-svg { width: 46px; height: 46px; stroke: var(--success); fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.flash-ring.out .flash-svg { stroke: var(--primary); }
+.flash-svg path, .flash-svg polyline {
+  stroke-dasharray: 60; stroke-dashoffset: 60;
+}
+.flash.show .flash-svg path, .flash.show .flash-svg polyline {
+  animation: draw .5s var(--ease) .3s forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+.flash-title { font-size: 19px; font-weight: 800; letter-spacing: -.4px; }
+.flash-sub { font-size: 13.5px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
+
+/* ═══════════ EMPTY / SKELETON ═══════════ */
+.empty { text-align: center; padding: 30px 16px; animation: rise .5s var(--ease); }
+.empty svg { width: 42px; height: 42px; stroke: var(--text-light); fill: none; stroke-width: 1.4; opacity: .5; margin-bottom: 10px; }
+.empty-t { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+.empty-s { font-size: 12.5px; color: var(--text-light); margin-top: 4px; }
+
+.sk-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.sk-row:last-child { border-bottom: none; }
+.sk {
+  border-radius: 6px; height: 11px;
+  background: linear-gradient(90deg, #edf1f6 25%, #f8fafc 37%, #edf1f6 63%);
+  background-size: 400% 100%; animation: shimmer 1.35s ease infinite;
 }
 @keyframes shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
-/* ── TOAST ── */
+/* ═══════════ TOAST ═══════════ */
 .toast {
-  position: fixed; bottom: calc(84px + env(safe-area-inset-bottom));
-  left: 50%; transform: translateX(-50%) translateY(14px);
-  background: var(--text); color: #fff;
-  padding: 11px 18px; border-radius: 99px;
-  font-size: 13.5px; font-weight: 500; letter-spacing: .1px;
-  display: flex; align-items: center; gap: 8px;
-  opacity: 0; transition: opacity .22s, transform .22s;
-  pointer-events: none; white-space: nowrap; z-index: 999;
-  box-shadow: var(--shadow-lg);
-  max-width: calc(100vw - 32px);
+  position: fixed; left: 50%; bottom: calc(92px + var(--safe-bot));
+  transform: translate(-50%, 20px); z-index: 400;
+  display: flex; align-items: center; gap: 9px;
+  background: var(--sidebar-bg); color: #fff;
+  padding: 12px 18px; border-radius: 99px;
+  font-size: 13.5px; font-weight: 600; max-width: calc(100vw - 32px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  opacity: 0; pointer-events: none;
+  transition: opacity .26s var(--ease), transform .34s var(--spring);
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast .tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
-.toast.err .tdot { background: var(--danger); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast i { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+.toast.err i { background: var(--danger); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
 </style>
 </head>
 <body>
 
-<!-- ══ LOADER ══ -->
-<div id="screen-loader" class="screen active">
+<!-- ═══ BOOT ═══ -->
+<div id="screen-boot" class="screen active">
   <div class="spinner"></div>
-  <div class="loader-text">Connecting…</div>
+  <div class="boot-text">Connecting…</div>
 </div>
 
-<!-- ══ LOGIN ══ -->
+<!-- ═══ LOGIN ═══ -->
 <div id="screen-login" class="screen">
   <div class="brand">
     <div class="brand-mark">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"/>
+        <polyline class="hand" points="12 7 12 12 15.5 13.8"/>
+      </svg>
     </div>
     <div class="brand-name">DomCub Clock</div>
     <div class="brand-tag">Employee Time Tracking</div>
   </div>
 
   <div class="pin-card">
-    <div class="pin-label">Enter your 6-digit PIN</div>
+    <div class="pin-label">Enter your PIN</div>
     <div class="pin-dots" id="pinDots">
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
     </div>
     <div class="keypad" id="keypad">
-      <button class="key" data-key="1">1</button>
-      <button class="key" data-key="2">2</button>
-      <button class="key" data-key="3">3</button>
-      <button class="key" data-key="4">4</button>
-      <button class="key" data-key="5">5</button>
-      <button class="key" data-key="6">6</button>
-      <button class="key" data-key="7">7</button>
-      <button class="key" data-key="8">8</button>
-      <button class="key" data-key="9">9</button>
-      <button class="key aux" data-key="clear">CLEAR</button>
-      <button class="key" data-key="0">0</button>
-      <button class="key del" data-key="del">⌫</button>
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key aux" data-k="clear">CLEAR</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key del" data-k="del" aria-label="Delete">
+        <svg viewBox="0 0 24 24"><path d="M20 5H9l-6 7 6 7h11a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><line x1="17" y1="9.5" x2="12.5" y2="14.5"/><line x1="12.5" y1="9.5" x2="17" y2="14.5"/></svg>
+      </button>
     </div>
-    <div class="pin-error" id="pinError"></div>
+    <div class="pin-msg" id="pinMsg"></div>
   </div>
 </div>
 
-<!-- ══ PORTAL ══ -->
-<div id="screen-portal" class="screen">
-  <header class="portal-header">
-    <div class="portal-header-left">
-      <div class="avatar" id="avatarInitials">—</div>
+<!-- ═══ APP ═══ -->
+<div id="screen-app" class="screen">
+
+  <header class="appbar">
+    <div class="appbar-left">
+      <div class="avatar" id="avatar">—</div>
       <div style="min-width:0">
-        <div class="portal-name" id="empName">—</div>
-        <div class="portal-role" id="empRole">—</div>
+        <div class="greet" id="greet">Welcome</div>
+        <div class="uname" id="uname">—</div>
       </div>
     </div>
-    <button class="logout-btn" onclick="logout()">Sign out</button>
+    <button class="icon-btn" onclick="signOut()" aria-label="Sign out">
+      <svg viewBox="0 0 24 24"><path d="M15 17l5-5-5-5"/><line x1="20" y1="12" x2="9" y2="12"/><path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/></svg>
+    </button>
   </header>
 
-  <div class="portal-body">
+  <div class="scroller" id="scroller">
+    <div class="page">
 
-    <!-- ── CLOCK ── -->
-    <div id="sec-clock" class="section active">
-      <div class="card clock-card">
-        <div class="clock-time" id="liveTime">—</div>
-        <div class="clock-date" id="liveDate">—</div>
-        <div>
-          <span class="clock-status out" id="clockStatus">
-            <span class="status-dot"></span>
-            <span id="clockStatusText">Clocked out</span>
-          </span>
+      <!-- ── HOME ── -->
+      <section id="sec-home" class="section active">
+        <div class="now rise">
+          <div class="now-time" id="nowTime">—</div>
+          <div class="now-date" id="nowDate">—</div>
         </div>
-        <button class="clock-btn in" id="clockBtn" onclick="toggleClock()">Clock In</button>
-        <div class="elapsed" id="elapsedTime"></div>
-      </div>
 
-      <div class="card">
-        <div class="card-title">Recent Shifts</div>
-        <div id="shiftLog"></div>
-      </div>
-    </div>
-
-    <!-- ── HOURS ── -->
-    <div id="sec-hours" class="section">
-      <div class="section-heading">My Hours</div>
-      <select class="period-select" id="periodSelect" onchange="renderHours()">
-        <option value="current">Current pay period</option>
-        <option value="prev">Previous pay period</option>
-      </select>
-
-      <div class="card">
-        <div class="hero-stat">
-          <div class="val" id="totalHrs">0.0<span>hrs</span></div>
-          <div class="lbl" id="periodLabel">—</div>
+        <div class="dial-wrap rise" style="animation-delay:.06s">
+          <svg class="ring" viewBox="0 0 240 240">
+            <circle class="track" cx="120" cy="120" r="110"/>
+            <circle class="fill" id="ringFill" cx="120" cy="120" r="110"/>
+          </svg>
+          <button class="dial" id="dial" onclick="toggleClock()">
+            <svg class="dial-icon" id="dialIcon" viewBox="0 0 24 24">
+              <path d="M10 17l5-5-5-5"/><line x1="15" y1="12" x2="3" y2="12"/>
+              <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/>
+            </svg>
+            <span class="dial-big" id="dialBig" hidden></span>
+            <span class="dial-sub" id="dialSub">Clock In</span>
+          </button>
         </div>
-        <div class="stat-row"><span class="stat-label">Regular hours</span><span class="stat-value" id="regHrs">0.00</span></div>
-        <div class="stat-row"><span class="stat-label">Overtime hours</span><span class="stat-value" id="otHrs">0.00</span></div>
-        <div class="stat-row"><span class="stat-label">Shifts worked</span><span class="stat-value" id="shiftCount">0</span></div>
-        <div class="stat-row"><span class="stat-label">Estimated gross</span><span class="stat-value" id="estGross" style="color:var(--success)">$0.00</span></div>
-      </div>
 
-      <div class="card">
-        <div class="card-title">Shift Breakdown</div>
-        <div id="hoursLog"></div>
-      </div>
-    </div>
+        <div class="dial-caption" id="dialCaption">Tap to start your shift</div>
 
-    <!-- ── PAY ── -->
-    <div id="sec-pay" class="section">
-      <div class="section-heading">Pay Statements</div>
-      <div id="payList"></div>
-    </div>
-
-    <!-- ── TIME OFF ── -->
-    <div id="sec-timeoff" class="section">
-      <div class="section-heading">Time Off</div>
-
-      <div class="card">
-        <div class="card-title">New Request</div>
-        <div class="form-group">
-          <label class="form-label" for="toType">Type</label>
-          <select class="form-select" id="toType">
-            <option value="vacation">Vacation</option>
-            <option value="sick">Sick leave</option>
-            <option value="personal">Personal day</option>
-            <option value="unpaid">Unpaid leave</option>
-          </select>
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label" for="toStart">Start date</label>
-            <input type="date" class="form-input" id="toStart">
+        <div class="quick">
+          <div class="quick-item rise" style="animation-delay:.12s">
+            <div class="quick-val" id="qToday">0.0</div>
+            <div class="quick-lbl">Hours today</div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="toEnd">End date</label>
-            <input type="date" class="form-input" id="toEnd">
+          <div class="quick-item rise" style="animation-delay:.18s">
+            <div class="quick-val" id="qPeriod">0.0</div>
+            <div class="quick-lbl">This period</div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="toNote">Note <span style="font-weight:500;color:var(--text-light)">(optional)</span></label>
-          <textarea class="form-textarea" id="toNote" placeholder="Add any details for your manager…"></textarea>
+
+        <div class="card rise" style="animation-delay:.24s">
+          <div class="card-title">Recent Shifts</div>
+          <div id="recentList"></div>
         </div>
-        <button class="submit-btn" id="toSubmitBtn" onclick="submitTimeOff()">Submit Request</button>
-      </div>
+      </section>
 
-      <div class="card">
-        <div class="card-title">My Requests</div>
-        <div id="requestList"></div>
-      </div>
+      <!-- ── HOURS ── -->
+      <section id="sec-hours" class="section">
+        <div class="head"><h1>My Hours</h1></div>
+
+        <div class="seg" id="periodSeg">
+          <span class="seg-thumb" id="segThumb"></span>
+          <button class="seg-btn active" data-p="current" onclick="setPeriod('current',this)">This period</button>
+          <button class="seg-btn" data-p="prev" onclick="setPeriod('prev',this)">Last period</button>
+        </div>
+
+        <div class="card">
+          <div class="hero">
+            <div class="hero-val"><span id="heroNum">0.0</span><span class="unit">hrs</span></div>
+            <div class="hero-lbl" id="heroLbl">—</div>
+          </div>
+          <div class="stat"><span class="stat-l">Regular</span><span class="stat-v" id="sReg">0.00</span></div>
+          <div class="stat"><span class="stat-l">Overtime</span><span class="stat-v" id="sOt">0.00</span></div>
+          <div class="stat"><span class="stat-l">Shifts</span><span class="stat-v" id="sCount">0</span></div>
+          <div class="stat"><span class="stat-l">Estimated gross</span><span class="stat-v" id="sGross" style="color:var(--success)">$0.00</span></div>
+        </div>
+
+        <div class="card" id="chartCard">
+          <div class="card-title">Daily Breakdown</div>
+          <div class="bars" id="bars"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">All Shifts</div>
+          <div id="shiftList"></div>
+        </div>
+      </section>
+
+      <!-- ── PAY ── -->
+      <section id="sec-pay" class="section">
+        <div class="head"><h1>Pay</h1></div>
+        <div id="payList"></div>
+      </section>
+
+      <!-- ── TIME OFF ── -->
+      <section id="sec-off" class="section">
+        <div class="head">
+          <h1>Time Off</h1>
+          <button class="btn-sm" onclick="openSheet()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Request
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">My Requests</div>
+          <div id="offList"></div>
+        </div>
+      </section>
+
     </div>
-
   </div>
 
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="clock" onclick="switchTab('clock',this)">
+  <nav class="tabbar" id="tabbar">
+    <button class="tab active" data-tab="home" onclick="go('home')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/></svg>Clock
     </button>
-    <button class="tab-btn" data-tab="hours" onclick="switchTab('hours',this)">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Hours
+    <button class="tab" data-tab="hours" onclick="go('hours')">
+      <svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>Hours
     </button>
-    <button class="tab-btn" data-tab="pay" onclick="switchTab('pay',this)">
-      <svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="9.5" y2="14.5"/></svg>Pay
+    <button class="tab" data-tab="pay" onclick="go('pay')">
+      <svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="9.5" y2="14.5"/></svg>Pay
     </button>
-    <button class="tab-btn" data-tab="timeoff" onclick="switchTab('timeoff',this)">
-      <svg viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="14" rx="2.5"/><path d="M16 6.5V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1.5"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="9.5" y1="13.5" x2="14.5" y2="13.5"/></svg>Time Off
+    <button class="tab" data-tab="off" onclick="go('off')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="15" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="12" y1="13.5" x2="12" y2="17.5"/><line x1="10" y1="15.5" x2="14" y2="15.5"/></svg>Time Off
     </button>
   </nav>
 </div>
 
-<div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg"></span></div>
+<!-- ═══ REQUEST SHEET ═══ -->
+<div class="sheet" id="sheet">
+  <div class="sheet-bd" onclick="closeSheet()"></div>
+  <div class="sheet-panel" id="sheetPanel">
+    <div class="grabber" id="grabber"></div>
+    <div class="sheet-title">Request Time Off</div>
+
+    <div class="fgroup">
+      <label class="flabel">Type</label>
+      <div class="chips" id="typeChips">
+        <div class="chip on" data-t="vacation">Vacation</div>
+        <div class="chip" data-t="sick">Sick leave</div>
+        <div class="chip" data-t="personal">Personal</div>
+        <div class="chip" data-t="unpaid">Unpaid</div>
+      </div>
+    </div>
+
+    <div class="fgrid">
+      <div class="fgroup">
+        <label class="flabel" for="offStart">From</label>
+        <input type="date" class="finput" id="offStart">
+      </div>
+      <div class="fgroup">
+        <label class="flabel" for="offEnd">To</label>
+        <input type="date" class="finput" id="offEnd">
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel" for="offNote">Note <span style="font-weight:500;color:var(--text-light)">(optional)</span></label>
+      <textarea class="ftext" id="offNote" placeholder="Anything your manager should know…"></textarea>
+    </div>
+
+    <button class="btn" id="offSubmit" onclick="submitRequest()">Submit Request</button>
+  </div>
+</div>
+
+<!-- ═══ FLASH ═══ -->
+<div class="flash" id="flash">
+  <div class="flash-in">
+    <div class="flash-ring" id="flashRing">
+      <svg class="flash-svg" viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
+    </div>
+    <div class="flash-title" id="flashTitle"></div>
+    <div class="flash-sub" id="flashSub"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i></i><span id="toastMsg"></span></div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -623,572 +818,733 @@ const firebaseConfig = {
   measurementId: "G-668H2W780D"
 };
 
-const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
-const auth = getAuth(app);
+const fb   = initializeApp(firebaseConfig);
+const db   = getFirestore(fb);
+const auth = getAuth(fb);
 
-const OT_THRESHOLD = 80;   // hours per pay period before overtime
+const OT_LIMIT   = 80;    // hours per pay period before overtime
+const SHIFT_GOAL = 8;     // hours — fills the progress ring
+const RING_LEN   = 2 * Math.PI * 110;
+
+const $ = id => document.getElementById(id);
 
 // ── STATE ────────────────────────────────────────────────
-let currentEmp   = null;
-let openClockIn  = null;
-let clockInTime  = null;
-let shiftCache   = null;   // all ClockIns for the signed-in employee
-let timeInterval = null;
+let emp = null, openId = null, inAt = null, shifts = null;
+let tab = 'home', period = 'current', offType = 'vacation';
+let ticker = null;
+
+const TAB_ORDER = ['home', 'hours', 'pay', 'off'];
 
 // ── BOOT ─────────────────────────────────────────────────
-(async function boot() {
+(async () => {
   try {
     await signInAnonymously(auth);
-    hide('screen-loader');
-    show('screen-login');
+    swap('screen-boot', 'screen-login');
   } catch (err) {
     console.error('Auth error:', err);
-    document.getElementById('screen-loader').innerHTML = `
-      <div style="text-align:center;padding:24px;max-width:310px">
-        <div style="font-size:17px;font-weight:600;color:#fff;margin-bottom:8px">Unable to connect</div>
-        <div style="font-size:13px;color:#94a3b8;line-height:1.55;margin-bottom:18px">${err.message}</div>
-        <div style="font-size:12px;color:#64748b;line-height:1.55">Enable <b style="color:#94a3b8">Anonymous sign-in</b> under Firebase Console → Authentication → Sign-in method.</div>
-        <button onclick="location.reload()" style="margin-top:20px;padding:11px 26px;background:#4f46e5;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">Try again</button>
+    $('screen-boot').innerHTML = `
+      <div style="text-align:center;padding:28px;max-width:320px">
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:10px">Unable to connect</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:18px">${esc(err.message)}</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.6">Turn on <b style="color:#94a3b8">Anonymous sign-in</b> in Firebase Console → Authentication → Sign-in method.</div>
+        <button onclick="location.reload()" style="margin-top:22px;padding:13px 30px;background:#4f46e5;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer">Try again</button>
       </div>`;
   }
 })();
 
-// ═════════════════════════════════════════════════════════
-//  PIN LOGIN
-// ═════════════════════════════════════════════════════════
-let pinBuffer = '';
-let pinLocked = false;
+function swap(fromId, toId) {
+  const a = $(fromId), b = $(toId);
+  a.classList.add('leave');
+  setTimeout(() => {
+    a.classList.remove('active', 'leave');
+    b.classList.add('active', 'enter');
+    setTimeout(() => b.classList.remove('enter'), 460);
+  }, 260);
+}
 
-document.getElementById('keypad').addEventListener('click', e => {
-  const key = e.target.closest('[data-key]');
-  if (!key || pinLocked) return;
-  const k = key.dataset.key;
-  if (k === 'del')        pinBuffer = pinBuffer.slice(0, -1);
-  else if (k === 'clear') pinBuffer = '';
-  else if (pinBuffer.length < 6) pinBuffer += k;
-  updateDots();
-  if (pinBuffer.length === 6) { pinLocked = true; setTimeout(tryLogin, 140); }
+// ═════════════════════════════════════════════════════════
+//  PIN
+// ═════════════════════════════════════════════════════════
+let pin = '', busy = false;
+
+$('keypad').addEventListener('click', e => {
+  const k = e.target.closest('[data-k]');
+  if (!k || busy) return;
+  buzz(8);
+  const v = k.dataset.k;
+  if (v === 'del')        pin = pin.slice(0, -1);
+  else if (v === 'clear') pin = '';
+  else if (pin.length < 6) pin += v;
+  paintDots();
+  if (pin.length === 6) { busy = true; setTimeout(verify, 180); }
 });
 
-function updateDots(state) {
+function paintDots(state) {
   document.querySelectorAll('.pin-dot').forEach((d, i) => {
-    d.className = 'pin-dot';
-    if (i < pinBuffer.length) d.classList.add(state || 'filled');
+    d.className = 'pin-dot' + (i < pin.length ? ' ' + (state || 'filled') : '');
   });
 }
 
-function rejectPin(msg) {
-  updateDots('error');
-  document.getElementById('pinDots').classList.add('shake');
-  document.getElementById('pinError').textContent = msg;
+function failPin(msg) {
+  buzz([12, 60, 12]);
+  paintDots('error');
+  $('pinDots').classList.add('shake');
+  $('pinMsg').textContent = msg;
   setTimeout(() => {
-    pinBuffer = ''; pinLocked = false;
-    updateDots();
-    document.getElementById('pinDots').classList.remove('shake');
-    document.getElementById('pinError').textContent = '';
+    pin = ''; busy = false;
+    paintDots();
+    $('pinDots').classList.remove('shake');
+    $('pinMsg').textContent = '';
   }, 1500);
 }
 
-async function tryLogin() {
-  document.getElementById('pinError').textContent = '';
+async function verify() {
+  $('pinMsg').textContent = '';
   try {
     const snap = await getDocs(query(
       collection(db, 'Employees'),
-      where('pin', '==', pinBuffer),
+      where('pin', '==', pin),
       where('status', '==', 'active'),
       limit(1)
     ));
-    if (snap.empty) { rejectPin('Incorrect PIN. Please try again.'); return; }
+    if (snap.empty) return failPin('Incorrect PIN. Please try again.');
+
+    paintDots('ok');
+    buzz(18);
     const d = snap.docs[0];
-    currentEmp = { id: d.id, ...d.data() };
-    pinBuffer = ''; pinLocked = false;
-    updateDots();
-    enterPortal();
+    emp = { id: d.id, ...d.data() };
+    setTimeout(() => {
+      pin = ''; busy = false; paintDots();
+      start();
+    }, 380);
   } catch (err) {
     console.error(err);
-    rejectPin('Connection error. Please try again.');
+    failPin('Connection problem. Please try again.');
   }
 }
 
 // ═════════════════════════════════════════════════════════
-//  PORTAL
+//  SESSION START
 // ═════════════════════════════════════════════════════════
-async function enterPortal() {
-  hide('screen-login');
-  show('screen-portal');
+async function start() {
+  swap('screen-login', 'screen-app');
 
-  document.getElementById('avatarInitials').textContent = initialsOf(currentEmp.name);
-  document.getElementById('empName').textContent = currentEmp.name || 'Employee';
-  document.getElementById('empRole').textContent = subtitleOf(currentEmp);
+  $('avatar').textContent = initials(emp.name);
+  $('uname').textContent  = firstName(emp.name);
+  $('greet').textContent  = greeting();
 
-  const today = todayStr();
-  document.getElementById('toStart').value = today;
-  document.getElementById('toEnd').value   = today;
+  const t = today();
+  $('offStart').value = t;
+  $('offEnd').value   = t;
 
-  loadJobTitle();
-  startLiveClock();
-  switchTab('clock', document.querySelector('[data-tab="clock"]'));
+  loadJob();
+  startTicker();
+  go('home', true);
 
-  skeleton('shiftLog', 4);
-  await loadShifts();
-  await resolveOpenShift();
-  renderShiftLog();
+  sk('recentList', 3);
+  await pullShifts();
+  detectOpen();
+  paintHome();
 }
 
-function subtitleOf(emp) {
-  const bits = [];
-  if (emp.hourlyRate) bits.push('$' + emp.hourlyRate + '/hr');
-  if (emp.store)      bits.push('Store ' + emp.store);
-  return bits.join('  ·  ') || 'Employee';
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-async function loadJobTitle() {
-  if (!currentEmp.jobId) return;
+async function loadJob() {
+  if (!emp.jobId) return;
   try {
-    const jobSnap = await getDoc(doc(db, 'Jobs', currentEmp.jobId));
-    if (!jobSnap.exists()) return;
-    const title = jobSnap.data().title;
-    if (!title) return;
-    const rest = subtitleOf(currentEmp);
-    document.getElementById('empRole').textContent = title + '  ·  ' + rest;
-  } catch { /* title is optional */ }
+    const s = await getDoc(doc(db, 'Jobs', emp.jobId));
+    if (s.exists() && s.data().title) $('greet').textContent = s.data().title;
+  } catch { /* optional */ }
 }
 
-function logout() {
-  clearInterval(timeInterval);
-  currentEmp = openClockIn = clockInTime = shiftCache = null;
-  pinBuffer = ''; pinLocked = false;
-  updateDots();
-  hide('screen-portal');
-  show('screen-login');
+function signOut() {
+  clearInterval(ticker);
+  emp = openId = inAt = shifts = null;
+  pin = ''; busy = false; paintDots();
+  $('pinMsg').textContent = '';
+  swap('screen-app', 'screen-login');
 }
 
 // ═════════════════════════════════════════════════════════
 //  DATA
 // ═════════════════════════════════════════════════════════
-async function loadShifts() {
+async function pullShifts() {
   const snap = await getDocs(query(
     collection(db, 'ClockIns'),
-    where('employeeId', '==', currentEmp.id)
+    where('employeeId', '==', emp.id)
   ));
-  shiftCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  return shiftCache;
+  shifts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return shifts;
 }
 
-async function resolveOpenShift() {
-  const open = (shiftCache || []).find(s => !s.clockOut);
-  if (open) {
-    openClockIn = open.id;
-    clockInTime = msOf(open.clockIn) || Date.now();
-    setClockedIn(true);
-  } else {
-    openClockIn = clockInTime = null;
-    setClockedIn(false);
-  }
+function detectOpen() {
+  const o = (shifts || []).find(s => !s.clockOut);
+  if (o) { openId = o.id; inAt = ms(o.clockIn) || Date.now(); }
+  else   { openId = inAt = null; }
+  paintDial();
 }
 
-function completedShifts() {
-  return (shiftCache || [])
-    .filter(s => s.clockOut)
-    .sort((a, b) => msOf(b.clockIn) - msOf(a.clockIn));
+function done() {
+  return (shifts || []).filter(s => s.clockOut).sort((a, b) => ms(b.clockIn) - ms(a.clockIn));
 }
 
 // ═════════════════════════════════════════════════════════
-//  LIVE CLOCK
+//  CLOCK
 // ═════════════════════════════════════════════════════════
-function startLiveClock() {
-  clearInterval(timeInterval);
+function startTicker() {
+  clearInterval(ticker);
   tick();
-  timeInterval = setInterval(tick, 1000);
+  ticker = setInterval(tick, 1000);
 }
 
 function tick() {
-  const now = new Date();
-  const t = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-  const m = t.match(/^(\d{1,2}:\d{2})(:\d{2})?\s*(.*)$/);
-  document.getElementById('liveTime').innerHTML = m
-    ? `${m[1]}<span class="sec">${m[2] || ''} ${m[3] || ''}</span>`
-    : t;
-  document.getElementById('liveDate').textContent =
-    now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  const n = new Date();
+  $('nowTime').textContent = n.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  $('nowDate').textContent = n.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 
-  if (openClockIn && clockInTime) {
-    document.getElementById('elapsedTime').innerHTML =
-      `On shift since ${fmtTime(clockInTime)} · <b>${fmtElapsed(Date.now() - clockInTime)}</b>`;
+  if (openId && inAt) {
+    const el = Date.now() - inAt;
+    $('dialBig').textContent = clockFmt(el);
+    const pct = Math.min(1, el / 3600000 / SHIFT_GOAL);
+    $('ringFill').style.strokeDashoffset = RING_LEN * (1 - pct);
+    $('qToday').textContent = (hoursOn(today()) + el / 3600000).toFixed(1);
   }
 }
 
-function fmtElapsed(ms) {
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${h}h ${pad(m)}m ${pad(s)}s`;
-}
-
-// ═════════════════════════════════════════════════════════
-//  CLOCK IN / OUT
-// ═════════════════════════════════════════════════════════
 async function toggleClock() {
-  const btn = document.getElementById('clockBtn');
-  btn.disabled = true;
+  const d = $('dial');
+  d.disabled = true;
+  buzz([14, 50, 14]);
 
   try {
-    if (!openClockIn) {
+    if (!openId) {
       const ref = await addDoc(collection(db, 'ClockIns'), {
-        employeeId: currentEmp.id,
+        employeeId: emp.id,
         clockIn:  Timestamp.now(),
         clockOut: null,
-        date:     todayStr(),
+        date:     today(),
         hours:    0,
-        store:    currentEmp.store || '1'
+        store:    emp.store || '1'
       });
-      openClockIn = ref.id;
-      clockInTime = Date.now();
-      setClockedIn(true);
-      toast(`Clocked in at ${fmtTime(clockInTime)}`);
+      openId = ref.id;
+      inAt   = Date.now();
+      paintDial();
+      flash(true, 'Clocked In', `Shift started at ${hhmm(inAt)}`);
     } else {
-      const hours = round2((Date.now() - clockInTime) / 3600000);
-      await updateDoc(doc(db, 'ClockIns', openClockIn), {
-        clockOut: Timestamp.now(),
-        hours
-      });
-      openClockIn = clockInTime = null;
-      setClockedIn(false);
-      toast(`Clocked out · ${hours.toFixed(2)} hrs recorded`);
+      const h = round2((Date.now() - inAt) / 3600000);
+      await updateDoc(doc(db, 'ClockIns', openId), { clockOut: Timestamp.now(), hours: h });
+      openId = inAt = null;
+      paintDial();
+      flash(false, 'Clocked Out', `${h.toFixed(2)} hours recorded`);
     }
-    await loadShifts();
-    renderShiftLog();
+    await pullShifts();
+    paintHome();
   } catch (err) {
     console.error(err);
     toast('Something went wrong. Please try again.', true);
   } finally {
-    btn.disabled = false;
+    d.disabled = false;
   }
 }
 
-function setClockedIn(state) {
-  const btn    = document.getElementById('clockBtn');
-  const status = document.getElementById('clockStatus');
-  const stTxt  = document.getElementById('clockStatusText');
-  if (state) {
-    btn.textContent   = 'Clock Out';
-    btn.className     = 'clock-btn out';
-    status.className  = 'clock-status in';
-    stTxt.textContent = 'Clocked in';
-  } else {
-    btn.textContent   = 'Clock In';
-    btn.className     = 'clock-btn in';
-    status.className  = 'clock-status out';
-    stTxt.textContent = 'Clocked out';
-    document.getElementById('elapsedTime').textContent = '';
-  }
+function paintDial() {
+  const on = !!openId;
+  $('dial').classList.toggle('on', on);
+  $('dialIcon').hidden = on;
+  $('dialBig').hidden  = !on;
+  $('dialSub').textContent = on ? 'Tap to clock out' : 'Clock In';
+  $('dialCaption').innerHTML = on
+    ? `<span class="live-chip"><span class="live-dot"></span>On shift since ${hhmm(inAt)}</span>`
+    : 'Tap to start your shift';
+  if (!on) $('ringFill').style.strokeDashoffset = RING_LEN;
+  if (on) tick();
+}
+
+function hoursOn(dayStr) {
+  return (shifts || []).filter(s => s.clockOut && s.date === dayStr)
+                       .reduce((a, s) => a + (s.hours || 0), 0);
 }
 
 // ═════════════════════════════════════════════════════════
-//  RENDERERS
+//  HOME
 // ═════════════════════════════════════════════════════════
-function shiftRow(s) {
-  const inMs  = msOf(s.clockIn);
-  const outMs = msOf(s.clockOut);
-  const hrs   = s.hours ?? (outMs - inMs) / 3600000;
-  return `<div class="row">
-    <div>
-      <div class="row-main">${fmtTime(inMs)} – ${fmtTime(outMs)}</div>
-      <div class="row-sub">${fmtDateShort(inMs)}</div>
+function paintHome() {
+  const { start: ps, end: pe } = range('current');
+  const periodHrs = done().filter(s => s.date >= ps && s.date <= pe)
+                          .reduce((a, s) => a + (s.hours || 0), 0);
+
+  countTo($('qToday'), hoursOn(today()) + (openId && inAt ? (Date.now() - inAt) / 3600000 : 0), 1);
+  countTo($('qPeriod'), periodHrs, 1);
+
+  const rows = done().slice(0, 5);
+  $('recentList').innerHTML = rows.length
+    ? rows.map((s, i) => shiftRow(s, i)).join('')
+    : blank('clock', 'No shifts yet', 'Your completed shifts will show up here');
+}
+
+function shiftRow(s, i) {
+  const a = ms(s.clockIn), b = ms(s.clockOut);
+  const h = s.hours ?? (b - a) / 3600000;
+  const d = new Date(a);
+  return `<div class="row" style="--i:${i}">
+    <div class="row-ic">${MON[d.getMonth()]}<b>${d.getDate()}</b></div>
+    <div class="row-body">
+      <div class="row-main">${hhmm(a)} – ${hhmm(b)}</div>
+      <div class="row-sub">${DAY[d.getDay()]}</div>
     </div>
-    <div class="row-value">${hrs.toFixed(2)} hrs</div>
+    <div class="row-val">${h.toFixed(2)}<small>hrs</small></div>
   </div>`;
 }
 
-function renderShiftLog() {
-  const rows = completedShifts().slice(0, 6);
-  document.getElementById('shiftLog').innerHTML = rows.length
-    ? rows.map(shiftRow).join('')
-    : emptyState('clock', 'No completed shifts yet');
+// ═════════════════════════════════════════════════════════
+//  HOURS
+// ═════════════════════════════════════════════════════════
+function setPeriod(p, btn) {
+  if (p === period) return;
+  buzz(8);
+  period = p;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  $('segThumb').style.transform = p === 'prev' ? 'translateX(100%)' : 'none';
+  paintHours();
 }
 
-async function renderHours() {
-  const { start, end, label } = getPeriodRange(document.getElementById('periodSelect').value);
-  document.getElementById('periodLabel').textContent = label;
-  skeleton('hoursLog', 3);
+async function paintHours() {
+  const { start: a, end: b, label } = range(period);
+  $('heroLbl').textContent = label;
+  sk('shiftList', 3);
 
   try {
-    if (!shiftCache) await loadShifts();
-    const shifts = completedShifts().filter(s => s.date >= start && s.date <= end);
+    if (!shifts) await pullShifts();
+    const list = done().filter(s => s.date >= a && s.date <= b);
 
-    const total = shifts.reduce((sum, s) => sum + (s.hours || 0), 0);
-    const reg   = Math.min(total, OT_THRESHOLD);
-    const ot    = Math.max(0, total - OT_THRESHOLD);
-    const rate  = currentEmp.hourlyRate || 0;
+    const total = list.reduce((x, s) => x + (s.hours || 0), 0);
+    const reg   = Math.min(total, OT_LIMIT);
+    const ot    = Math.max(0, total - OT_LIMIT);
+    const rate  = emp.hourlyRate || 0;
 
-    document.getElementById('totalHrs').innerHTML = `${total.toFixed(1)}<span>hrs</span>`;
-    document.getElementById('regHrs').textContent = reg.toFixed(2);
-    document.getElementById('otHrs').textContent  = ot.toFixed(2);
-    document.getElementById('shiftCount').textContent = shifts.length;
-    document.getElementById('estGross').textContent = fmtMoney(reg * rate + ot * rate * 1.5);
+    countTo($('heroNum'), total, 1);
+    countTo($('sReg'), reg, 2);
+    countTo($('sOt'), ot, 2);
+    countTo($('sCount'), list.length, 0);
+    countTo($('sGross'), reg * rate + ot * rate * 1.5, 2, true);
 
-    document.getElementById('hoursLog').innerHTML = shifts.length
-      ? shifts.map(shiftRow).join('')
-      : emptyState('calendar', 'No shifts in this period');
+    drawBars(list);
+
+    $('shiftList').innerHTML = list.length
+      ? list.map((s, i) => shiftRow(s, i)).join('')
+      : blank('calendar', 'No shifts this period', 'Try the other pay period');
   } catch (err) {
     console.error(err);
-    document.getElementById('hoursLog').innerHTML = emptyState('alert', 'Could not load hours');
+    $('shiftList').innerHTML = blank('alert', 'Could not load hours', 'Check your connection and try again');
   }
 }
 
-async function renderPay() {
-  const el = document.getElementById('payList');
-  el.innerHTML = `<div class="card">${skeletonRows(3)}</div>`;
+function drawBars(list) {
+  const byDay = {};
+  list.forEach(s => { byDay[s.date] = (byDay[s.date] || 0) + (s.hours || 0); });
+  const days = Object.keys(byDay).sort().slice(-7);
+
+  if (!days.length) { $('chartCard').style.display = 'none'; return; }
+  $('chartCard').style.display = '';
+
+  const max = Math.max(...days.map(d => byDay[d]), 1);
+  const TALL = 68;   // px for the longest bar
+  $('bars').innerHTML = days.map((d, i) => {
+    const dt = parseDay(d);
+    const h = Math.max(4, Math.round((byDay[d] / max) * TALL));
+    return `<div class="bar-col">
+      <div class="bar" style="height:${h}px;--i:${i}" title="${byDay[d].toFixed(2)} hrs"></div>
+      <div class="bar-lbl">${DAY[dt.getDay()][0]}${dt.getDate()}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═════════════════════════════════════════════════════════
+//  PAY
+// ═════════════════════════════════════════════════════════
+async function paintPay() {
+  const el = $('payList');
+  el.innerHTML = `<div class="card">${skRows(3)}</div>`;
   try {
     const snap = await getDocs(query(
       collection(db, 'PayStatements'),
-      where('employeeId', '==', currentEmp.id)
+      where('employeeId', '==', emp.id)
     ));
-    if (snap.empty) { el.innerHTML = `<div class="card">${emptyState('pay', 'No pay statements yet')}</div>`; return; }
-
-    const statements = snap.docs
-      .map(d => d.data())
-      .sort((a, b) => msOf(b.savedAt) - msOf(a.savedAt));
-
-    el.innerHTML = statements.map(p => {
-      const hours  = p.hours || 0;
-      const rate   = p.rate  || 0;
-      const gross  = p.gross || hours * rate;
-      const status = normStatus(p.status);
-      return `<div class="card">
-        <div class="pay-head">
-          <div>
-            <div class="pay-gross">${fmtMoney(gross)}</div>
-            <div class="pay-period">${fmtRange(p.periodStart, p.periodEnd)}</div>
+    if (snap.empty) {
+      el.innerHTML = `<div class="card">${blank('pay', 'No statements yet', 'Pay statements appear once your manager posts them')}</div>`;
+      return;
+    }
+    el.innerHTML = snap.docs.map(d => d.data())
+      .sort((a, b) => ms(b.savedAt) - ms(a.savedAt))
+      .map((p, i) => {
+        const hrs = p.hours || 0, rate = p.rate || 0;
+        const gross = p.gross || hrs * rate;
+        const st = status(p.status);
+        return `<div class="card rise" style="animation-delay:${i * 70}ms">
+          <div class="pay-top">
+            <div>
+              <div class="pay-amt">${money(gross)}</div>
+              <div class="pay-per">${span(p.periodStart, p.periodEnd)}</div>
+            </div>
+            <span class="badge ${st}">${cap(st)}</span>
           </div>
-          <span class="badge ${status}">${capitalize(status)}</span>
-        </div>
-        <div class="stat-row"><span class="stat-label">Hours worked</span><span class="stat-value">${Number(hours).toFixed(2)}</span></div>
-        <div class="stat-row"><span class="stat-label">Hourly rate</span><span class="stat-value">${fmtMoney(rate)}</span></div>
-        <div class="stat-row"><span class="stat-label">Gross pay</span><span class="stat-value">${fmtMoney(gross)}</span></div>
-        ${p.paidDate ? `<div class="stat-row"><span class="stat-label">Paid on</span><span class="stat-value">${fmtDateLong(p.paidDate)}</span></div>` : ''}
-      </div>`;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    el.innerHTML = `<div class="card">${emptyState('alert', 'Could not load statements')}</div>`;
-  }
-}
-
-async function renderTimeOff() {
-  const el = document.getElementById('requestList');
-  skeleton('requestList', 3);
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'TimeOff'),
-      where('employeeId', '==', currentEmp.id)
-    ));
-    if (snap.empty) { el.innerHTML = emptyState('timeoff', 'No requests yet'); return; }
-
-    el.innerHTML = snap.docs
-      .map(d => d.data())
-      .sort((a, b) => msOf(b.createdAt) - msOf(a.createdAt))
-      .map(r => {
-        const status = normStatus(r.status);
-        return `<div class="row">
-          <div>
-            <div class="row-main">${labelForType(r.type)}</div>
-            <div class="row-sub">${fmtRange(r.startDate, r.endDate)}</div>
-            ${r.note ? `<div class="row-sub">${escapeHtml(r.note)}</div>` : ''}
-          </div>
-          <span class="badge ${status}">${capitalize(status)}</span>
+          <div class="stat"><span class="stat-l">Hours worked</span><span class="stat-v">${Number(hrs).toFixed(2)}</span></div>
+          <div class="stat"><span class="stat-l">Hourly rate</span><span class="stat-v">${money(rate)}</span></div>
+          <div class="stat"><span class="stat-l">Gross pay</span><span class="stat-v">${money(gross)}</span></div>
+          ${p.paidDate ? `<div class="stat"><span class="stat-l">Paid on</span><span class="stat-v">${longDate(p.paidDate)}</span></div>` : ''}
         </div>`;
       }).join('');
   } catch (err) {
     console.error(err);
-    el.innerHTML = emptyState('alert', 'Could not load requests');
+    el.innerHTML = `<div class="card">${blank('alert', 'Could not load statements', 'Check your connection and try again')}</div>`;
   }
 }
 
-async function submitTimeOff() {
-  const start = document.getElementById('toStart').value;
-  const end   = document.getElementById('toEnd').value;
-  const type  = document.getElementById('toType').value;
-  const note  = document.getElementById('toNote').value.trim();
+// ═════════════════════════════════════════════════════════
+//  TIME OFF
+// ═════════════════════════════════════════════════════════
+async function paintOff() {
+  const el = $('offList');
+  sk('offList', 3);
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'TimeOff'),
+      where('employeeId', '==', emp.id)
+    ));
+    if (snap.empty) {
+      el.innerHTML = blank('calendar', 'No requests yet', 'Tap Request to ask for time off');
+      return;
+    }
+    el.innerHTML = snap.docs.map(d => d.data())
+      .sort((a, b) => ms(b.createdAt) - ms(a.createdAt))
+      .map((r, i) => {
+        const st = status(r.status);
+        return `<div class="row" style="--i:${i}">
+          <div class="row-body">
+            <div class="row-main">${typeName(r.type)}</div>
+            <div class="row-sub">${span(r.startDate, r.endDate)}</div>
+            ${r.note ? `<div class="row-sub">${esc(r.note)}</div>` : ''}
+          </div>
+          <span class="badge ${st}">${cap(st)}</span>
+        </div>`;
+      }).join('');
+  } catch (err) {
+    console.error(err);
+    el.innerHTML = blank('alert', 'Could not load requests', 'Check your connection and try again');
+  }
+}
 
-  if (!start || !end) { toast('Please select both dates.', true); return; }
-  if (end < start)    { toast('End date must be on or after the start date.', true); return; }
+$('typeChips').addEventListener('click', e => {
+  const c = e.target.closest('.chip');
+  if (!c) return;
+  buzz(8);
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+  c.classList.add('on');
+  offType = c.dataset.t;
+});
 
-  const btn = document.getElementById('toSubmitBtn');
+function openSheet() {
+  buzz(8);
+  $('sheet').classList.add('open');
+}
+
+function closeSheet() {
+  $('sheet').classList.remove('open');
+  $('sheetPanel').style.transform = '';
+}
+
+async function submitRequest() {
+  const a = $('offStart').value, b = $('offEnd').value;
+  const note = $('offNote').value.trim();
+
+  if (!a || !b) return toast('Please pick both dates.', true);
+  if (b < a)    return toast('The end date must come after the start.', true);
+
+  const btn = $('offSubmit');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
   try {
     await addDoc(collection(db, 'TimeOff'), {
-      employeeId: currentEmp.id,
-      type, startDate: start, endDate: end, note,
+      employeeId: emp.id,
+      type: offType, startDate: a, endDate: b, note,
       status: 'pending',
       createdAt: Timestamp.now()
     });
-    document.getElementById('toNote').value = '';
-    toast('Request submitted for approval');
-    renderTimeOff();
+    $('offNote').value = '';
+    closeSheet();
+    buzz([12, 50, 12]);
+    flash(true, 'Request Sent', 'Your manager will review it shortly');
+    paintOff();
   } catch (err) {
     console.error(err);
-    toast('Could not submit request. Please try again.', true);
+    toast('Could not submit. Please try again.', true);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Submit Request';
   }
 }
 
-// ═════════════════════════════════════════════════════════
-//  PERIODS  (semi-monthly: 1st–15th, 16th–end of month)
-// ═════════════════════════════════════════════════════════
-function getPeriodRange(which) {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-  const firstHalf = d <= 15;
-  let start, end;
+// swipe the sheet down to dismiss
+(() => {
+  const panel = $('sheetPanel');
+  let y0 = null, dy = 0;
+  const grab = e => {
+    if (panel.scrollTop > 0) return;
+    y0 = e.touches[0].clientY; dy = 0;
+    panel.classList.add('dragging');
+  };
+  const move = e => {
+    if (y0 === null) return;
+    dy = e.touches[0].clientY - y0;
+    if (dy > 0) panel.style.transform = `translateY(${dy}px)`;
+  };
+  const drop = () => {
+    if (y0 === null) return;
+    panel.classList.remove('dragging');
+    panel.style.transform = '';
+    if (dy > 110) closeSheet();
+    y0 = null;
+  };
+  panel.addEventListener('touchstart', grab, { passive: true });
+  panel.addEventListener('touchmove',  move, { passive: true });
+  panel.addEventListener('touchend',   drop);
+})();
 
-  if (which === 'current') {
-    if (firstHalf) { start = ymd(y, m, 1);  end = ymd(y, m, 15); }
-    else           { start = ymd(y, m, 16); end = ymd(y, m, lastDay(y, m)); }
-  } else {
-    if (firstHalf) {
-      const pm = m === 0 ? 11 : m - 1, py = m === 0 ? y - 1 : y;
-      start = ymd(py, pm, 16); end = ymd(py, pm, lastDay(py, pm));
-    } else {
-      start = ymd(y, m, 1); end = ymd(y, m, 15);
-    }
-  }
-  return { start, end, label: fmtRange(start, end) };
+// ═════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═════════════════════════════════════════════════════════
+function go(name, silent) {
+  if (name === tab && !silent) return;
+  const dir = TAB_ORDER.indexOf(name) > TAB_ORDER.indexOf(tab) ? 'slide-l' : 'slide-r';
+  tab = name;
+
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.remove('active', 'slide-l', 'slide-r');
+  });
+
+  const sec = $('sec-' + name);
+  sec.classList.add('active');
+  if (!silent) { sec.classList.add(dir); buzz(6); }
+  $('scroller').scrollTop = 0;
+
+  if (name === 'hours') paintHours();
+  if (name === 'pay')   paintPay();
+  if (name === 'off')   paintOff();
 }
 
-function ymd(y, m, d) { return `${y}-${pad(m + 1)}-${pad(d)}`; }
-function lastDay(y, m) { return new Date(y, m + 1, 0).getDate(); }
+// swipe between tabs
+(() => {
+  const el = $('scroller');
+  let x0 = 0, y0 = 0, t0 = 0;
+  el.addEventListener('touchstart', e => {
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    if (Date.now() - t0 > 600) return;
+    if (Math.abs(dx) < 65 || Math.abs(dy) > 45) return;
+    const i = TAB_ORDER.indexOf(tab) + (dx < 0 ? 1 : -1);
+    if (i >= 0 && i < TAB_ORDER.length) go(TAB_ORDER[i]);
+  }, { passive: true });
+})();
+
+// refresh when the app comes back to the foreground
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || !emp) return;
+  tick();
+  try {
+    await pullShifts();
+    detectOpen();
+    if (tab === 'home')  paintHome();
+    if (tab === 'hours') paintHours();
+  } catch { /* offline — keep showing cached values */ }
+});
 
 // ═════════════════════════════════════════════════════════
-//  UTILITIES
+//  FEEDBACK
 // ═════════════════════════════════════════════════════════
-function msOf(ts)  { return ts?.toMillis?.() ?? 0; }
-function pad(n)    { return String(n).padStart(2, '0'); }
-function round2(n) { return Math.round(n * 100) / 100; }
+function flash(good, title, sub) {
+  const f = $('flash');
+  $('flashTitle').textContent = title;
+  $('flashSub').textContent   = sub;
+  $('flashRing').classList.toggle('out', !good);
+  f.classList.remove('show');
+  void f.offsetWidth;               // restart the animation
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 1750);
+}
 
-function todayStr() {
+let toastT;
+function toast(msg, bad) {
+  const t = $('toast');
+  $('toastMsg').textContent = msg;
+  t.classList.toggle('err', !!bad);
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function buzz(p) { try { navigator.vibrate?.(p); } catch {} }
+
+// animated number counter
+function countTo(el, to, dp, isMoney) {
+  const from = parseFloat(String(el.textContent).replace(/[^0-9.-]/g, '')) || 0;
+  if (Math.abs(to - from) < 0.005) { el.textContent = isMoney ? money(to) : to.toFixed(dp); return; }
+  const t0 = performance.now(), dur = 620;
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    const v = from + (to - from) * (1 - Math.pow(1 - p, 3));
+    el.textContent = isMoney ? money(v) : v.toFixed(dp);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ═════════════════════════════════════════════════════════
+//  PAY PERIODS  (semi-monthly: 1–15, 16–end)
+// ═════════════════════════════════════════════════════════
+function range(which) {
   const n = new Date();
-  return ymd(n.getFullYear(), n.getMonth(), n.getDate());
+  const y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
+  const first = d <= 15;
+  let a, b;
+  if (which === 'current') {
+    if (first) { a = ymd(y, m, 1);  b = ymd(y, m, 15); }
+    else       { a = ymd(y, m, 16); b = ymd(y, m, endOf(y, m)); }
+  } else {
+    if (first) {
+      const pm = m === 0 ? 11 : m - 1, py = m === 0 ? y - 1 : y;
+      a = ymd(py, pm, 16); b = ymd(py, pm, endOf(py, pm));
+    } else { a = ymd(y, m, 1); b = ymd(y, m, 15); }
+  }
+  return { start: a, end: b, label: span(a, b) };
 }
 
-function parseYMD(s) {
+const ymd   = (y, m, d) => `${y}-${p2(m + 1)}-${p2(d)}`;
+const endOf = (y, m) => new Date(y, m + 1, 0).getDate();
+
+// ═════════════════════════════════════════════════════════
+//  HELPERS
+// ═════════════════════════════════════════════════════════
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const ms     = ts => ts?.toMillis?.() ?? 0;
+const p2     = n => String(n).padStart(2, '0');
+const round2 = n => Math.round(n * 100) / 100;
+const cap    = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+
+function today() { const n = new Date(); return ymd(n.getFullYear(), n.getMonth(), n.getDate()); }
+
+function parseDay(s) {
   if (!s) return null;
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 
-function fmtTime(ms) {
-  if (!ms) return '—';
-  return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+function hhmm(t) {
+  return t ? new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
 }
 
-function fmtDateShort(ms) {
-  if (!ms) return '';
-  return new Date(ms).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+function clockFmt(msTotal) {
+  const h = Math.floor(msTotal / 3600000);
+  const m = Math.floor((msTotal % 3600000) / 60000);
+  const s = Math.floor((msTotal % 60000) / 1000);
+  return `${h}:${p2(m)}:${p2(s)}`;
 }
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function fmtDateLong(ymdStr) {
-  const d = parseYMD(ymdStr);
-  return d ? `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : (ymdStr || '—');
+function longDate(s) {
+  const d = parseDay(s);
+  return d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : (s || '—');
 }
 
-// "Aug 1 – 15, 2026" within a month, "Aug 16 – Sep 2, 2026" across months
-function fmtRange(startStr, endStr) {
-  const a = parseYMD(startStr), b = parseYMD(endStr);
-  if (!a || !b) return `${startStr || '—'} – ${endStr || '—'}`;
-  const sameMonth = a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-  const left  = `${MONTHS[a.getMonth()]} ${a.getDate()}`;
-  const right = sameMonth
-    ? `${b.getDate()}, ${b.getFullYear()}`
-    : `${MONTHS[b.getMonth()]} ${b.getDate()}, ${b.getFullYear()}`;
+// "Aug 1 – 15, 2026" inside one month, otherwise "Aug 16 – Sep 2, 2026"
+function span(a, b) {
+  const x = parseDay(a), y = parseDay(b);
+  if (!x || !y) return `${a || '—'} – ${b || '—'}`;
+  const same = x.getMonth() === y.getMonth() && x.getFullYear() === y.getFullYear();
+  const left = `${MON[x.getMonth()]} ${x.getDate()}`;
+  const right = same ? `${y.getDate()}, ${y.getFullYear()}`
+                     : `${MON[y.getMonth()]} ${y.getDate()}, ${y.getFullYear()}`;
   return `${left} – ${right}`;
 }
 
-function fmtMoney(n) {
+function money(n) {
   return Number(n || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-function capitalize(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }
-
-// keep status safe for use as both a CSS class and label text
-function normStatus(s) {
+// safe for use as a CSS class and as label text
+function status(s) {
   return String(s || 'pending').toLowerCase().replace(/[^a-z]/g, '') || 'pending';
 }
 
-function labelForType(t) {
-  const map = { vacation: 'Vacation', sick: 'Sick leave', personal: 'Personal day', unpaid: 'Unpaid leave' };
-  return map[t] || escapeHtml(capitalize(t || 'Request'));
+function typeName(t) {
+  return ({ vacation: 'Vacation', sick: 'Sick leave', personal: 'Personal day', unpaid: 'Unpaid leave' })[t]
+      || esc(cap(t || 'Request'));
 }
 
-function initialsOf(name) {
-  return (name || 'U').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+function initials(n) {
+  return (n || 'U').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function escapeHtml(s) {
+function firstName(n) { return (n || 'Employee').trim().split(/\s+/)[0]; }
+
+function esc(s) {
   return String(s).replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const EMPTY_ICONS = {
+const ICONS = {
   clock:    `<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/>`,
-  calendar: `<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="3" y1="10" x2="21" y2="10"/>`,
-  pay:      `<rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><line x1="2.5" y1="10" x2="21.5" y2="10"/>`,
-  timeoff:  `<rect x="2.5" y="6.5" width="19" height="14" rx="2.5"/><path d="M16 6.5V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1.5"/>`,
-  alert:    `<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.5"/>`
+  calendar: `<rect x="3" y="5.5" width="18" height="15" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/>`,
+  pay:      `<rect x="2.5" y="5.5" width="19" height="13" rx="3"/><line x1="2.5" y1="10" x2="21.5" y2="10"/>`,
+  alert:    `<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.4" x2="12" y2="16.5"/>`
 };
 
-function emptyState(icon, text) {
+function blank(icon, title, sub) {
   return `<div class="empty">
-    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">${EMPTY_ICONS[icon] || EMPTY_ICONS.alert}</svg>
-    <div>${text}</div>
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">${ICONS[icon] || ICONS.alert}</svg>
+    <div class="empty-t">${title}</div>
+    <div class="empty-s">${sub}</div>
   </div>`;
 }
 
-function skeletonRows(n) {
+function skRows(n) {
   return Array.from({ length: n }, () => `
-    <div class="skel-row">
+    <div class="sk-row">
+      <div class="sk" style="width:38px;height:38px;border-radius:12px;flex-shrink:0"></div>
       <div style="flex:1">
-        <div class="skel" style="width:44%"></div>
-        <div class="skel" style="width:28%;margin-top:7px;height:9px"></div>
+        <div class="sk" style="width:52%"></div>
+        <div class="sk" style="width:30%;margin-top:7px;height:9px"></div>
       </div>
-      <div class="skel" style="width:52px"></div>
+      <div class="sk" style="width:44px"></div>
     </div>`).join('');
 }
 
-function skeleton(id, n) { document.getElementById(id).innerHTML = skeletonRows(n); }
+function sk(id, n) { $(id).innerHTML = skRows(n); }
 
-function show(id) { document.getElementById(id).classList.add('active'); }
-function hide(id) { document.getElementById(id).classList.remove('active'); }
-
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  document.getElementById('sec-' + name).classList.add('active');
-  if (name === 'hours')   renderHours();
-  if (name === 'pay')     renderPay();
-  if (name === 'timeoff') renderTimeOff();
-}
-
-let toastTimer;
-function toast(msg, isError) {
-  const t = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  t.classList.toggle('err', !!isError);
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
+// installable on Android home screens
+try {
+  const mf = {
+    name: 'DomCub Clock', short_name: 'DomCub',
+    start_url: '.', display: 'standalone',
+    background_color: '#1a1f36', theme_color: '#1a1f36'
+  };
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(new Blob([JSON.stringify(mf)], { type: 'application/json' }));
+  document.head.appendChild(link);
+} catch { /* not critical */ }
 
 // expose for inline handlers
-Object.assign(window, { toggleClock, logout, switchTab, submitTimeOff, renderHours });
+Object.assign(window, { toggleClock, signOut, go, setPeriod, openSheet, closeSheet, submitRequest });
 </script>
 </body>
 </html>
