@@ -385,13 +385,24 @@ async function entrar() {
 
     // Pins/{pin} sólo se puede leer si ya se conoce el PIN exacto:
     // la colección no permite enumerar.
+    let emp = null;
     const p = await db.collection('Pins').doc(pin).get();
-    if (!p.exists) { errorPin('PIN no reconocido'); return; }
 
-    const empDoc = await db.collection('Employees').doc(p.data().employeeId).get();
-    if (!empDoc.exists) { errorPin('PIN no reconocido'); return; }
+    if (p.exists) {
+      const d = await db.collection('Employees').doc(p.data().employeeId).get();
+      if (d.exists) emp = { id: d.id, ...d.data() };
+    } else {
+      // Respaldo: los colaboradores dados de alta antes de mover el PIN
+      // lo tienen dentro de su propio documento. Se busca ahí y, si
+      // aparece, se crea el Pins/{pin} que faltaba para la próxima vez.
+      const q = await db.collection('Employees').where('pin','==',pin).limit(1).get();
+      if (!q.empty) {
+        emp = { id: q.docs[0].id, ...q.docs[0].data() };
+        try { await db.collection('Pins').doc(pin).set({ employeeId: emp.id }); } catch (e) {}
+      }
+    }
 
-    const emp = { id: empDoc.id, ...empDoc.data() };
+    if (!emp) { errorPin('PIN no reconocido'); return; }
     if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
 
     // Ata este dispositivo al PIN para que las reglas puedan verificar
