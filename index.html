@@ -1,476 +1,295 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>DomCub Clock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#151a30">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='11' fill='%234f46e5'/%3E%3Cg transform='translate(2.8 8.03) scale(0.726)'%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M8.6 27C7.6 15.4 15.4 5.4 26.6 5.4C33.4 5.4 37.6 9.2 39 14.3L46.3 16.9C49.5 18.1 49.9 21.3 46.7 25.5C44.9 27.9 42.7 29.6 40.5 30.4C41.9 27.6 41.7 25 40.5 23.6C38.7 21.7 36.1 21.2 33.7 22C32.1 23.8 30.7 26 29.3 28.2C27.7 30.7 26.3 33.8 25 38.6L10.6 33.2C9.2 31.2 8.7 29 8.6 27ZM28.9 13.3C31.1 12.3 33.7 13.1 34.3 15.1C33.1 16.5 30.5 16.5 28.9 15.3Z'/%3E%3C/g%3E%3C/svg%3E">
+<title>Reloj — El Águila</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --sidebar-bg: #1a1f36;
-  --sidebar-hover: #252d4a;
-  --sidebar-active: #4f46e5;
-  --primary: #4f46e5;
-  --primary-light: #ede9fe;
-  --primary-dark: #3730a3;
-  --accent: #06b6d4;
-  --success: #10b981;
-  --success-light: #d1fae5;
-  --warning: #f59e0b;
-  --warning-light: #fef3c7;
-  --danger: #ef4444;
-  --danger-light: #fee2e2;
-  --bg: #f8fafc;
-  --card-bg: #ffffff;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-}
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #151a30;
+    --bg2:     #1c2340;
+    --primary: #4f46e5;
+    --green:   #059669;
+    --red:     #e11d48;
+    --ease:    cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-}
+  html, body { height: 100%; }
 
-.screen { display: none; }
-.screen.active { display: flex; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: linear-gradient(165deg, var(--bg) 0%, var(--bg2) 100%);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
 
-/* ── LOADER ── */
-#screen-loader {
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: var(--sidebar-bg);
-  flex-direction: column;
-  gap: 16px;
-}
+  body::before, body::after {
+    content: ''; position: fixed; border-radius: 50%;
+    pointer-events: none; filter: blur(3px);
+  }
+  body::before {
+    top: -18vh; right: -12vw; width: 46vh; height: 46vh;
+    background: radial-gradient(circle, rgba(99,102,241,0.22), transparent 70%);
+  }
+  body::after {
+    bottom: -16vh; left: -10vw; width: 38vh; height: 38vh;
+    background: radial-gradient(circle, rgba(6,182,212,0.14), transparent 70%);
+  }
 
-.spinner {
-  width: 40px; height: 40px;
-  border: 3px solid rgba(255,255,255,0.15);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
+  /* ── Barra superior ── */
+  .top {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; gap: 14px;
+    padding: 22px 30px;
+    z-index: 5;
+  }
+  .logo {
+    width: 46px; height: 46px; flex-shrink: 0;
+    background: linear-gradient(135deg,#6366f1,#4f46e5);
+    border-radius: 12px;
+    display: grid; place-items: center;
+    box-shadow: 0 6px 18px rgba(79,70,229,0.45);
+  }
+  .logo svg { width: 26px; height: 26px; fill: #fff; }
+  .brand   { font-size: 19px; font-weight: 800; letter-spacing: -0.03em; }
+  .brand-s { font-size: 11px; color: rgba(255,255,255,0.38); letter-spacing: 0.09em; text-transform: uppercase; }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+  .now { margin-left: auto; text-align: right; }
+  .now-time { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .now-date { font-size: 12.5px; color: rgba(255,255,255,0.42); margin-top: 4px; text-transform: capitalize; }
 
-/* ── LOGIN ── */
-#screen-login {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px;
-  background: var(--sidebar-bg);
-}
+  /* ── Pantallas ── */
+  .screen {
+    width: 100%; max-width: 560px;
+    padding: 24px;
+    display: none;
+    animation: rise 0.4s var(--ease) both;
+  }
+  .screen.on { display: block; }
+  @keyframes rise { from { opacity:0; transform: translateY(16px) } to { opacity:1; transform:none } }
+  @keyframes pop  { 0%{transform:scale(0.85);opacity:0} 60%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-9px)} 40%,80%{transform:translateX(9px)} }
+  @keyframes ring { 0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,0.5)} 70%{box-shadow:0 0 0 26px rgba(5,150,105,0)} }
 
-.login-logo {
-  width: 64px; height: 64px;
-  background: var(--primary);
-  border-radius: 18px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 24px rgba(79,70,229,0.4);
-}
+  /* ── PIN ── */
+  .pin-title { text-align: center; font-size: 25px; font-weight: 700; letter-spacing: -0.03em; }
+  .pin-sub   { text-align: center; font-size: 15px; color: rgba(255,255,255,0.45); margin-top: 8px; }
 
-.login-logo svg { width: 36px; height: 36px; fill: #fff; }
-.login-title { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-.login-sub   { color: var(--text-light); font-size: 14px; margin-bottom: 36px; }
+  .dots { display: flex; justify-content: center; gap: 16px; margin: 40px 0 34px; }
+  .dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.22);
+    transition: all 0.2s var(--ease);
+  }
+  .dot.on {
+    background: #fff; border-color: #fff;
+    transform: scale(1.18);
+    box-shadow: 0 0 16px rgba(255,255,255,0.55);
+  }
+  .dots.err { animation: shake 0.42s ease; }
+  .dots.err .dot { background: var(--red); border-color: var(--red); box-shadow: none; }
 
-.pin-card {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 28px 24px;
-  width: 100%;
-  max-width: 340px;
-  box-shadow: var(--shadow-lg);
-}
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .key {
+    height: 92px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    color: #fff;
+    font-family: inherit; font-size: 32px; font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.18s ease;
+  }
+  .key:active { transform: scale(0.94); background: rgba(255,255,255,0.18); }
+  .key.ghost  { background: none; border-color: transparent; font-size: 24px; color: rgba(255,255,255,0.5); }
+  .key.ghost:active { background: rgba(255,255,255,0.08); }
 
-.pin-label {
-  font-size: 13px; font-weight: 600; color: var(--text-muted);
-  text-align: center; margin-bottom: 16px;
-  letter-spacing: .5px; text-transform: uppercase;
-}
+  .err-msg {
+    text-align: center; min-height: 24px; margin-top: 22px;
+    font-size: 15px; color: #fda4af; font-weight: 500;
+  }
 
-.pin-dots { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+  /* ── Botón grande ── */
+  .who { text-align: center; margin-bottom: 30px; animation: pop 0.45s var(--ease) both; }
+  .who-ava {
+    width: 78px; height: 78px; border-radius: 50%;
+    margin: 0 auto 16px;
+    display: grid; place-items: center;
+    font-size: 28px; font-weight: 700;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.32);
+  }
+  .who-name { font-size: 29px; font-weight: 700; letter-spacing: -0.035em; }
+  .who-sub  { font-size: 15px; color: rgba(255,255,255,0.45); margin-top: 5px; }
 
-.pin-dot {
-  width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid var(--border); background: transparent; transition: all .15s;
-}
-.pin-dot.filled { background: var(--primary); border-color: var(--primary); }
-.pin-dot.error  { background: var(--danger);  border-color: var(--danger); }
+  .state {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-top: 16px; padding: 9px 20px;
+    border-radius: 999px;
+    font-size: 14.5px; font-weight: 600;
+  }
+  .state.out { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.6); }
+  .state.in  { background: rgba(5,150,105,0.2); color: #6ee7b7; }
+  .state .pip { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .state.in .pip { animation: ring 2s infinite; }
 
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  /* El botón: enorme, para tablet */
+  .big {
+    width: 100%; height: 210px;
+    border: none; border-radius: 30px;
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    transition: transform 0.12s ease, box-shadow 0.3s var(--ease);
+    animation: pop 0.5s var(--ease) 0.08s both;
+  }
+  .big i { font-size: 54px; line-height: 1; }
+  .big .lbl { font-size: 34px; font-weight: 800; letter-spacing: -0.035em; }
+  .big .hint { font-size: 15px; font-weight: 500; opacity: 0.75; }
+  .big:active { transform: scale(0.975); }
+  .big:disabled { opacity: 0.6; cursor: default; }
 
-.key {
-  height: 60px; border: none; border-radius: var(--radius);
-  background: var(--bg); font-size: 20px; font-weight: 600; color: var(--text);
-  cursor: pointer; transition: background .12s, transform .08s; user-select: none;
-}
-.key:active { background: var(--primary-light); transform: scale(.96); }
-.key.del { color: var(--danger); }
-.key.wide { font-size: 14px; color: var(--text-muted); }
+  .big.entrada {
+    background: linear-gradient(160deg, #10b981, var(--green));
+    box-shadow: 0 18px 44px -12px rgba(5,150,105,0.65);
+  }
+  .big.salida {
+    background: linear-gradient(160deg, #f43f5e, var(--red));
+    box-shadow: 0 18px 44px -12px rgba(225,29,72,0.6);
+  }
 
-.pin-error { text-align: center; color: var(--danger); font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .exit {
+    display: block; margin: 26px auto 0;
+    background: none; border: none;
+    color: rgba(255,255,255,0.35);
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    padding: 12px 26px; cursor: pointer;
+  }
+  .exit:active { color: #fff; }
 
-/* ── PORTAL ── */
-#screen-portal { flex-direction: column; min-height: 100vh; }
+  /* ── Confirmación ── */
+  .done { text-align: center; padding: 30px 0; }
+  .done-ico {
+    width: 118px; height: 118px; border-radius: 50%;
+    margin: 0 auto 26px;
+    display: grid; place-items: center;
+    font-size: 52px;
+    animation: pop 0.5s var(--ease) both;
+  }
+  .done-ico.ok  { background: rgba(5,150,105,0.2); color: #6ee7b7; }
+  .done-ico.bye { background: rgba(225,29,72,0.18); color: #fda4af; }
+  .done-t { font-size: 32px; font-weight: 700; letter-spacing: -0.035em; }
+  .done-s { font-size: 17px; color: rgba(255,255,255,0.5); margin-top: 10px; }
+  .done-h {
+    display: inline-block; margin-top: 22px;
+    padding: 12px 26px; border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+    font-size: 20px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
 
-.portal-header {
-  background: var(--sidebar-bg); color: #fff;
-  padding: 16px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 100;
-}
+  .spin { display: inline-block; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg) } }
 
-.portal-header-left { display: flex; align-items: center; gap: 12px; }
+  /* ── Tablet grande ── */
+  @media (min-width: 820px) and (min-height: 700px) {
+    .screen { max-width: 640px; }
+    .key    { height: 106px; font-size: 36px; }
+    .big    { height: 250px; }
+    .big i  { font-size: 62px; }
+    .big .lbl { font-size: 40px; }
+  }
 
-.avatar {
-  width: 38px; height: 38px; border-radius: 50%; background: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0;
-}
+  /* ── Pantallas bajas ── */
+  @media (max-height: 620px) {
+    .key { height: 68px; font-size: 26px; }
+    .big { height: 160px; }
+    .big i { font-size: 40px; }
+    .big .lbl { font-size: 28px; }
+    .dots { margin: 24px 0 20px; }
+    .who-ava { width: 60px; height: 60px; font-size: 22px; }
+  }
 
-.portal-name { font-weight: 600; font-size: 15px; }
-.portal-role { font-size: 12px; color: var(--text-light); }
-
-.logout-btn {
-  background: rgba(255,255,255,0.08); border: none; color: #fff;
-  padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer;
-}
-
-.portal-body {
-  flex: 1; padding: 20px 16px 100px;
-  max-width: 480px; margin: 0 auto; width: 100%;
-}
-
-.tabs {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--card-bg); border-top: 1px solid var(--border);
-  display: flex; z-index: 100;
-}
-
-.tab-btn {
-  flex: 1; border: none; background: transparent;
-  padding: 10px 4px 14px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  cursor: pointer; color: var(--text-light); font-size: 11px; font-weight: 500;
-  transition: color .15s;
-}
-.tab-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-.tab-btn.active { color: var(--primary); }
-
-.section { display: none; }
-.section.active { display: block; }
-
-.card {
-  background: var(--card-bg); border-radius: var(--radius);
-  padding: 20px; box-shadow: var(--shadow); margin-bottom: 14px;
-}
-
-.card-title {
-  font-size: 12px; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px;
-}
-
-/* ── CLOCK ── */
-.clock-display { text-align: center; padding: 8px 0 4px; }
-
-.clock-time {
-  font-size: 42px; font-weight: 700; letter-spacing: -1px;
-  color: var(--text); font-variant-numeric: tabular-nums;
-}
-
-.clock-date { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
-
-.clock-status {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 14px; padding: 6px 14px; border-radius: 99px;
-  font-size: 13px; font-weight: 600;
-}
-.clock-status.out { background: var(--danger-light); color: var(--danger); }
-.clock-status.in  { background: var(--success-light); color: var(--success); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-
-.clock-btn {
-  display: block; width: 100%; padding: 18px; border: none;
-  border-radius: var(--radius); font-size: 17px; font-weight: 700;
-  cursor: pointer; margin-top: 20px; transition: opacity .15s, transform .1s;
-  letter-spacing: .3px;
-}
-.clock-btn:active { opacity: .88; transform: scale(.98); }
-.clock-btn:disabled { opacity: .5; cursor: not-allowed; }
-.clock-btn.in  { background: var(--success); color: #fff; }
-.clock-btn.out { background: var(--danger);  color: #fff; }
-
-.elapsed { text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 10px; min-height: 18px; }
-
-.shift-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px;
-}
-.shift-row:last-child { border-bottom: none; }
-.shift-date { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
-.shift-hours { font-weight: 700; color: var(--primary); }
-
-/* ── HOURS ── */
-.period-select {
-  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 14px; color: var(--text);
-  background: var(--card-bg); margin-bottom: 14px;
-}
-
-.stat-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px;
-}
-.stat-row:last-child { border-bottom: none; }
-.stat-label { color: var(--text-muted); }
-.stat-value { font-weight: 700; }
-
-.big-stat { text-align: center; padding: 12px 0; }
-.big-stat .val { font-size: 36px; font-weight: 800; color: var(--primary); }
-.big-stat .lbl { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-
-.section-heading { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
-
-/* ── PAY ── */
-.pay-amount { text-align: center; padding: 10px 0 16px; }
-.pay-gross  { font-size: 40px; font-weight: 800; color: var(--success); }
-.pay-period { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-.pay-badge  { display: inline-block; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-top: 8px; }
-.pay-badge.paid    { background: var(--success-light); color: var(--success); }
-.pay-badge.pending { background: var(--warning-light); color: var(--warning); }
-
-/* ── TIME OFF ── */
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; padding: 12px 14px; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 15px; color: var(--text);
-  background: var(--card-bg); font-family: inherit;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  outline: none; border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,70,229,.12);
-}
-.form-textarea { min-height: 90px; resize: vertical; }
-
-.submit-btn {
-  display: block; width: 100%; padding: 15px;
-  background: var(--primary); color: #fff; border: none;
-  border-radius: var(--radius); font-size: 15px; font-weight: 700; cursor: pointer;
-}
-.submit-btn:active { background: var(--primary-dark); }
-.submit-btn:disabled { opacity: .5; cursor: not-allowed; }
-
-.request-row {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding: 12px 0; border-bottom: 1px solid var(--border); gap: 10px;
-}
-.request-row:last-child { border-bottom: none; }
-.request-type  { font-weight: 600; font-size: 14px; }
-.request-dates { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-.badge { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.badge.pending  { background: var(--warning-light); color: var(--warning); }
-.badge.approved { background: var(--success-light); color: var(--success); }
-.badge.denied   { background: var(--danger-light);  color: var(--danger); }
-
-.empty { text-align: center; padding: 32px 16px; color: var(--text-light); font-size: 14px; }
-
-.toast {
-  position: fixed; bottom: 90px; left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--text); color: #fff; padding: 12px 22px;
-  border-radius: 99px; font-size: 14px; font-weight: 500;
-  opacity: 0; transition: all .25s; pointer-events: none;
-  white-space: nowrap; z-index: 999;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
 </style>
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="screen-loader" class="screen active">
-  <div class="spinner"></div>
-  <div style="color:var(--text-light);font-size:14px;">Connecting…</div>
-</div>
-
-<!-- LOGIN -->
-<div id="screen-login" class="screen">
-  <div class="login-logo">
-    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+<div class="top">
+  <div class="logo">
+    <svg viewBox="7 0 44 44"><path fill-rule="evenodd" d="M8.6 27C7.6 15.4 15.4 5.4 26.6 5.4C33.4 5.4 37.6 9.2 39 14.3L46.3 16.9C49.5 18.1 49.9 21.3 46.7 25.5C44.9 27.9 42.7 29.6 40.5 30.4C41.9 27.6 41.7 25 40.5 23.6C38.7 21.7 36.1 21.2 33.7 22C32.1 23.8 30.7 26 29.3 28.2C27.7 30.7 26.3 33.8 25 38.6L10.6 33.2C9.2 31.2 8.7 29 8.6 27ZM28.9 13.3C31.1 12.3 33.7 13.1 34.3 15.1C33.1 16.5 30.5 16.5 28.9 15.3Z"/></svg>
   </div>
-  <div class="login-title">DomCub Clock</div>
-  <div class="login-sub">Employee Time Tracking</div>
-
-  <div class="pin-card">
-    <div class="pin-label">Enter your 6-digit PIN</div>
-    <div class="pin-dots" id="pinDots">
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-    </div>
-    <div class="keypad" id="keypad">
-      <button class="key" data-key="1">1</button>
-      <button class="key" data-key="2">2</button>
-      <button class="key" data-key="3">3</button>
-      <button class="key" data-key="4">4</button>
-      <button class="key" data-key="5">5</button>
-      <button class="key" data-key="6">6</button>
-      <button class="key" data-key="7">7</button>
-      <button class="key" data-key="8">8</button>
-      <button class="key" data-key="9">9</button>
-      <button class="key wide" data-key="clear">Clear</button>
-      <button class="key" data-key="0">0</button>
-      <button class="key del" data-key="del">⌫</button>
-    </div>
-    <div class="pin-error" id="pinError"></div>
+  <div>
+    <div class="brand">El Águila</div>
+    <div class="brand-s">Reloj</div>
+  </div>
+  <div class="now">
+    <div class="now-time" id="nowTime">--:--</div>
+    <div class="now-date" id="nowDate"></div>
   </div>
 </div>
 
-<!-- PORTAL -->
-<div id="screen-portal" class="screen">
-  <header class="portal-header">
-    <div class="portal-header-left">
-      <div class="avatar" id="avatarInitials">--</div>
-      <div>
-        <div class="portal-name" id="empName">--</div>
-        <div class="portal-role" id="empRole">--</div>
-      </div>
-    </div>
-    <button class="logout-btn" onclick="logout()">Sign Out</button>
-  </header>
+<!-- 1. PIN -->
+<section class="screen on" id="scPin">
+  <div class="pin-title">Ingresa tu PIN</div>
+  <div class="pin-sub">Los 6 dígitos que te dio tu gerente</div>
 
-  <div class="portal-body">
-
-    <!-- CLOCK -->
-    <div id="sec-clock" class="section active">
-      <div class="card">
-        <div class="clock-display">
-          <div class="clock-time" id="liveTime">--:-- --</div>
-          <div class="clock-date" id="liveDate">--</div>
-          <div>
-            <span class="clock-status out" id="clockStatus">
-              <span class="status-dot"></span>
-              <span id="clockStatusText">Clocked Out</span>
-            </span>
-          </div>
-        </div>
-        <button class="clock-btn in" id="clockBtn" onclick="toggleClock()">Clock In</button>
-        <div class="elapsed" id="elapsedTime"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Recent Shifts</div>
-        <div id="shiftLog"><div class="empty">Loading…</div></div>
-      </div>
-    </div>
-
-    <!-- HOURS -->
-    <div id="sec-hours" class="section">
-      <div class="section-heading">My Hours</div>
-      <select class="period-select" id="periodSelect" onchange="renderHours()">
-        <option value="current">Current Period</option>
-        <option value="prev">Previous Period</option>
-      </select>
-      <div class="card">
-        <div class="big-stat">
-          <div class="val" id="totalHrs">0.0</div>
-          <div class="lbl">Total Hours This Period</div>
-        </div>
-        <div class="stat-row"><span class="stat-label">Regular Hours</span><span class="stat-value" id="regHrs">0.0</span></div>
-        <div class="stat-row"><span class="stat-label">Overtime Hours</span><span class="stat-value" id="otHrs">0.0</span></div>
-        <div class="stat-row"><span class="stat-label">Period</span><span class="stat-value" id="periodLabel">--</span></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Shift Breakdown</div>
-        <div id="hoursLog"><div class="empty">Loading…</div></div>
-      </div>
-    </div>
-
-    <!-- PAY -->
-    <div id="sec-pay" class="section">
-      <div class="section-heading">Pay Statements</div>
-      <div id="payList"><div class="empty">Loading…</div></div>
-    </div>
-
-    <!-- TIME OFF -->
-    <div id="sec-timeoff" class="section">
-      <div class="section-heading">Time Off</div>
-      <div class="card">
-        <div class="card-title">Request Time Off</div>
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          <select class="form-select" id="toType">
-            <option value="vacation">Vacation</option>
-            <option value="sick">Sick Leave</option>
-            <option value="personal">Personal Day</option>
-            <option value="unpaid">Unpaid Leave</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Start Date</label>
-          <input type="date" class="form-input" id="toStart">
-        </div>
-        <div class="form-group">
-          <label class="form-label">End Date</label>
-          <input type="date" class="form-input" id="toEnd">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Note (optional)</label>
-          <textarea class="form-textarea" id="toNote" placeholder="Reason or additional info…"></textarea>
-        </div>
-        <button class="submit-btn" id="toSubmitBtn" onclick="submitTimeOff()">Submit Request</button>
-      </div>
-      <div class="card">
-        <div class="card-title">My Requests</div>
-        <div id="requestList"><div class="empty">Loading…</div></div>
-      </div>
-    </div>
-
+  <div class="dots" id="dots">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
   </div>
 
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="clock" onclick="switchTab('clock',this)">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>Clock
-    </button>
-    <button class="tab-btn" data-tab="hours" onclick="switchTab('hours',this)">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Hours
-    </button>
-    <button class="tab-btn" data-tab="pay" onclick="switchTab('pay',this)">
-      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Pay
-    </button>
-    <button class="tab-btn" data-tab="timeoff" onclick="switchTab('timeoff',this)">
-      <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>Time Off
-    </button>
-  </nav>
-</div>
+  <div class="pad" id="pad"></div>
+  <div class="err-msg" id="errMsg"></div>
+</section>
 
-<div class="toast" id="toast"></div>
+<!-- 2. Botón -->
+<section class="screen" id="scBtn">
+  <div class="who">
+    <div class="who-ava" id="whoAva"></div>
+    <div class="who-name" id="whoName"></div>
+    <div class="who-sub"  id="whoSub"></div>
+    <div id="whoState"></div>
+  </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {
-  getFirestore, collection, query, where, limit,
-  getDocs, addDoc, updateDoc, doc, Timestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  <button class="big entrada" id="bigBtn" onclick="marcar()">
+    <i class="ico"></i>
+    <span class="lbl">Marcar Entrada</span>
+    <span class="hint"></span>
+  </button>
 
-// ── CONFIG ──────────────────────────────────────────────
-const firebaseConfig = {
+  <button class="exit" onclick="reset()">Cancelar</button>
+</section>
+
+<!-- 3. Confirmación -->
+<section class="screen" id="scDone">
+  <div class="done">
+    <div class="done-ico ok" id="doneIco">✓</div>
+    <div class="done-t" id="doneT"></div>
+    <div class="done-s" id="doneS"></div>
+    <div class="done-h" id="doneH" style="display:none"></div>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
   apiKey: "AIzaSyDtOfZXPEP-k_gvvu3Lvt307mOLBWezMrw",
   authDomain: "domcub.firebaseapp.com",
   projectId: "domcub",
@@ -478,510 +297,220 @@ const firebaseConfig = {
   messagingSenderId: "329163319008",
   appId: "1:329163319008:web:1c7d3e71252ec4f5641285",
   measurementId: "G-668H2W780D"
-};
+});
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
-const auth = getAuth(app);
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const COLORS = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626','#7c3aed','#0284c7','#be185d'];
 
-// ── STATE ────────────────────────────────────────────────
-let currentEmp  = null;
-let openClockIn = null;
-let clockInTime = null;
-let timeInterval = null;
+const STORES = { '1':'Tienda Despensas', '2':'Tienda Cocina' };
 
-// ── BOOT — sign in anonymously first, then show login ────
-async function boot() {
-  try {
-    await signInAnonymously(auth);
-    hide('screen-loader');
-    show('screen-login');
-  } catch (err) {
-    console.error('Auth error:', err);
-    document.getElementById('screen-loader').innerHTML =
-      `<div style="color:#ef4444;text-align:center;padding:24px;max-width:300px">
-        <div style="font-size:18px;font-weight:700;margin-bottom:8px">Connection Error</div>
-        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">${err.message}</div>
-        <div style="font-size:12px;color:#64748b">Make sure <b>Anonymous Authentication</b> is enabled in Firebase Console → Authentication → Sign-in method</div>
-        <button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Retry</button>
-      </div>`;
-  }
+function hora(d) {
+  let h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2,'0');
+  const s = h < 12 ? 'a. m.' : 'p. m.';
+  h = h % 12 || 12;
+  return `${h}:${m} ${s}`;
 }
-boot();
+function hoyStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function inicial(n) {
+  const p = (n||'').trim().split(' ');
+  return (p.length >= 2 ? p[0][0]+p[p.length-1][0] : (n||'?').slice(0,2)).toUpperCase();
+}
+function color(n) {
+  let h = 0;
+  for (const c of (n||'')) h = (h*31 + c.charCodeAt(0)) % COLORS.length;
+  return COLORS[Math.abs(h) % COLORS.length];
+}
 
-// ══════════════════════════════════════════════════════════
-//  PIN LOGIN
-// ══════════════════════════════════════════════════════════
-let pinBuffer = '';
+// ── Reloj de pantalla ──
+function tick() {
+  const d = new Date();
+  document.getElementById('nowTime').textContent = hora(d);
+  document.getElementById('nowDate').textContent =
+    `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+tick(); setInterval(tick, 1000);
 
-document.getElementById('keypad').addEventListener('click', e => {
-  const key = e.target.closest('[data-key]');
-  if (!key) return;
-  const k = key.dataset.key;
-  if (k === 'del')   { pinBuffer = pinBuffer.slice(0, -1); }
-  else if (k === 'clear') { pinBuffer = ''; }
-  else if (pinBuffer.length < 6) { pinBuffer += k; }
-  updateDots();
-  if (pinBuffer.length === 6) setTimeout(tryLogin, 120);
+// ── Teclado ──
+let pin = '';
+const pad = document.getElementById('pad');
+[1,2,3,4,5,6,7,8,9,'','0','←'].forEach(k => {
+  const b = document.createElement('button');
+  b.className = 'key' + (typeof k === 'string' && k !== '' ? ' ghost' : '');
+  b.textContent = k;
+  if (k === '') { b.style.visibility = 'hidden'; }
+  b.onclick = () => k === '←' ? borrar() : teclear(String(k));
+  pad.appendChild(b);
 });
 
-function updateDots(state) {
-  document.querySelectorAll('.pin-dot').forEach((d, i) => {
-    d.className = 'pin-dot';
-    if (i < pinBuffer.length) d.classList.add(state || 'filled');
-  });
+function pintarDots() {
+  document.querySelectorAll('#dots .dot').forEach((d,i) =>
+    d.classList.toggle('on', i < pin.length));
+}
+function teclear(n) {
+  if (pin.length >= 6) return;
+  document.getElementById('dots').classList.remove('err');
+  document.getElementById('errMsg').textContent = '';
+  pin += n; pintarDots();
+  if (pin.length === 6) setTimeout(entrar, 180);
+}
+function borrar() { pin = pin.slice(0,-1); pintarDots(); }
+
+function errorPin(msg) {
+  const d = document.getElementById('dots');
+  d.classList.add('err');
+  document.getElementById('errMsg').textContent = msg;
+  setTimeout(() => { pin = ''; pintarDots(); d.classList.remove('err'); }, 900);
 }
 
-async function tryLogin() {
-  document.getElementById('pinError').textContent = '';
+function pantalla(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+// ── Sesión ──
+let EMP = null, ABIERTO = null;
+
+async function entrar() {
+  document.getElementById('errMsg').innerHTML = '<span class="spin">◠</span> Verificando...';
   try {
-    const q = query(
-      collection(db, 'Employees'),
-      where('pin', '==', pinBuffer),
-      where('status', '==', 'active'),
-      limit(1)
-    );
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      const docSnap = snap.docs[0];
-      currentEmp = { id: docSnap.id, ...docSnap.data() };
-      pinBuffer = '';
-      updateDots();
-      enterPortal();
-    } else {
-      updateDots('error');
-      document.getElementById('pinError').textContent = 'Invalid PIN. Try again.';
-      setTimeout(() => { pinBuffer = ''; updateDots(); document.getElementById('pinError').textContent = ''; }, 1400);
-    }
-  } catch (err) {
-    console.error(err);
-    document.getElementById('pinError').textContent = 'Connection error. Try again.';
-    pinBuffer = '';
-    updateDots();
-  }
-}
+    // Firestore exige sesión iniciada; el PIN es la credencial.
+    if (!auth.currentUser) await auth.signInAnonymously();
 
-// ══════════════════════════════════════════════════════════
-//  PORTAL ENTRY
-// ══════════════════════════════════════════════════════════
-async function enterPortal() {
-  hide('screen-login');
-  show('screen-portal');
+    // Pins/{pin} sólo se puede leer si ya se conoce el PIN exacto:
+    // la colección no permite enumerar.
+    const p = await db.collection('Pins').doc(pin).get();
+    if (!p.exists) { errorPin('PIN no reconocido'); return; }
 
-  const initials = (currentEmp.name || 'U').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('avatarInitials').textContent = initials;
-  document.getElementById('empName').textContent = currentEmp.name || 'Employee';
-  document.getElementById('empRole').textContent = (currentEmp.jobId ? '' : '') + '$' + (currentEmp.hourlyRate || 0) + '/hr';
+    const empDoc = await db.collection('Employees').doc(p.data().employeeId).get();
+    if (!empDoc.exists) { errorPin('PIN no reconocido'); return; }
 
-  // Set today's date defaults for time-off form
-  const today = todayStr();
-  document.getElementById('toStart').value = today;
-  document.getElementById('toEnd').value   = today;
+    const emp = { id: empDoc.id, ...empDoc.data() };
+    if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
 
-  // Check for open clock-in
-  await checkOpenClockIn();
-  startLiveClock();
-  renderShiftLog();
-  switchTab('clock', document.querySelector('[data-tab="clock"]'));
-}
-
-async function checkOpenClockIn() {
-  const q = query(
-    collection(db, 'ClockIns'),
-    where('employeeId', '==', currentEmp.id),
-    where('clockOut', '==', null),
-    limit(1)
-  );
-  try {
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      const d = snap.docs[0];
-      openClockIn = d.id;
-      clockInTime = d.data().clockIn?.toMillis?.() ?? Date.now();
-      setClockedIn(true);
-    } else {
-      setClockedIn(false);
-    }
-  } catch { setClockedIn(false); }
-}
-
-function logout() {
-  clearInterval(timeInterval);
-  currentEmp  = null;
-  openClockIn = null;
-  clockInTime = null;
-  pinBuffer   = '';
-  updateDots();
-  hide('screen-portal');
-  show('screen-login');
-}
-
-// ══════════════════════════════════════════════════════════
-//  LIVE CLOCK
-// ══════════════════════════════════════════════════════════
-function startLiveClock() {
-  clearInterval(timeInterval);
-  tick();
-  timeInterval = setInterval(tick, 1000);
-}
-
-function tick() {
-  const now = new Date();
-  document.getElementById('liveTime').textContent =
-    now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  document.getElementById('liveDate').textContent =
-    now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-  if (openClockIn && clockInTime) {
-    document.getElementById('elapsedTime').textContent =
-      'Shift duration: ' + fmtElapsed(Date.now() - clockInTime);
-  }
-}
-
-function fmtElapsed(ms) {
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return (h ? h + 'h ' : '') + m + 'm ' + s + 's';
-}
-
-// ══════════════════════════════════════════════════════════
-//  CLOCK IN / OUT
-// ══════════════════════════════════════════════════════════
-async function toggleClock() {
-  const btn = document.getElementById('clockBtn');
-  btn.disabled = true;
-
-  if (!openClockIn) {
-    // CLOCK IN
-    try {
-      const now = Timestamp.now();
-      const ref = await addDoc(collection(db, 'ClockIns'), {
-        employeeId: currentEmp.id,
-        clockIn: now,
-        clockOut: null,
-        date: todayStr(),
-        hours: 0,
-        store: currentEmp.store || '1'
-      });
-      openClockIn = ref.id;
-      clockInTime = Date.now();
-      setClockedIn(true);
-      showToast('Clocked in successfully!');
-      renderShiftLog();
-    } catch (err) {
-      console.error(err);
-      showToast('Error clocking in. Try again.');
-    }
-  } else {
-    // CLOCK OUT
-    try {
-      const nowTs  = Timestamp.now();
-      const nowMs  = Date.now();
-      const hours  = parseFloat(((nowMs - clockInTime) / 3600000).toFixed(2));
-      await updateDoc(doc(db, 'ClockIns', openClockIn), {
-        clockOut: nowTs,
-        hours
-      });
-      openClockIn = null;
-      clockInTime = null;
-      setClockedIn(false);
-      document.getElementById('elapsedTime').textContent = '';
-      showToast('Clocked out. Have a great day!');
-      renderShiftLog();
-      renderHours();
-    } catch (err) {
-      console.error(err);
-      showToast('Error clocking out. Try again.');
-    }
-  }
-
-  btn.disabled = false;
-}
-
-function setClockedIn(state) {
-  const btn    = document.getElementById('clockBtn');
-  const status = document.getElementById('clockStatus');
-  const stTxt  = document.getElementById('clockStatusText');
-  if (state) {
-    btn.textContent   = 'Clock Out';
-    btn.className     = 'clock-btn out';
-    status.className  = 'clock-status in';
-    stTxt.textContent = 'Clocked In';
-  } else {
-    btn.textContent   = 'Clock In';
-    btn.className     = 'clock-btn in';
-    status.className  = 'clock-status out';
-    stTxt.textContent = 'Clocked Out';
-    document.getElementById('elapsedTime').textContent = '';
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-//  SHIFT LOG (clock tab — last 7 completed shifts)
-// ══════════════════════════════════════════════════════════
-async function renderShiftLog() {
-  const el = document.getElementById('shiftLog');
-  try {
-    const q = query(
-      collection(db, 'ClockIns'),
-      where('employeeId', '==', currentEmp.id)
-    );
-    const snap = await getDocs(q);
-    const shifts = snap.docs.map(d => d.data())
-      .filter(d => d.clockOut)
-      .sort((a, b) => (b.clockIn?.toMillis?.() ?? 0) - (a.clockIn?.toMillis?.() ?? 0))
-      .slice(0, 7);
-    if (!shifts.length) { el.innerHTML = '<div class="empty">No completed shifts yet.</div>'; return; }
-    el.innerHTML = shifts.map(s => {
-      const inMs  = s.clockIn?.toMillis?.()  ?? 0;
-      const outMs = s.clockOut?.toMillis?.() ?? 0;
-      const hrs   = s.hours ?? ((outMs - inMs) / 3600000);
-      return `<div class="shift-row">
-        <div>
-          <div>${fmtTime(inMs)} – ${fmtTime(outMs)}</div>
-          <div class="shift-date">${fmtDateShort(inMs)}</div>
-        </div>
-        <div class="shift-hours">${hrs.toFixed(2)} hrs</div>
-      </div>`;
-    }).join('');
-  } catch (err) {
-    el.innerHTML = '<div class="empty">Could not load shifts.</div>';
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-//  HOURS TAB
-// ══════════════════════════════════════════════════════════
-async function renderHours() {
-  const period = document.getElementById('periodSelect').value;
-  const { start, end, label } = getPeriodRange(period);
-
-  document.getElementById('periodLabel').textContent = label;
-
-  try {
-    const q = query(
-      collection(db, 'ClockIns'),
-      where('employeeId', '==', currentEmp.id)
-    );
-    const snap = await getDocs(q);
-    const shifts = snap.docs.map(d => d.data())
-      .filter(d => d.clockOut && d.date >= start && d.date <= end)
-      .sort((a, b) => (b.clockIn?.toMillis?.() ?? 0) - (a.clockIn?.toMillis?.() ?? 0));
-
-    const total = shifts.reduce((s, d) => s + (d.hours ?? 0), 0);
-    const reg   = Math.min(total, 80);
-    const ot    = Math.max(0, total - 80);
-
-    document.getElementById('totalHrs').textContent = total.toFixed(1);
-    document.getElementById('regHrs').textContent   = reg.toFixed(1);
-    document.getElementById('otHrs').textContent    = ot.toFixed(1);
-
-    const log = document.getElementById('hoursLog');
-    if (!shifts.length) { log.innerHTML = '<div class="empty">No shifts this period.</div>'; return; }
-    log.innerHTML = shifts.map(s => {
-      const inMs  = s.clockIn?.toMillis?.()  ?? 0;
-      const outMs = s.clockOut?.toMillis?.() ?? 0;
-      return `<div class="shift-row">
-        <div>
-          <div>${fmtTime(inMs)} – ${fmtTime(outMs)}</div>
-          <div class="shift-date">${fmtDateShort(inMs)}</div>
-        </div>
-        <div class="shift-hours">${(s.hours ?? 0).toFixed(2)} hrs</div>
-      </div>`;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    document.getElementById('hoursLog').innerHTML = '<div class="empty">Could not load hours.</div>';
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-//  PAY TAB
-// ══════════════════════════════════════════════════════════
-async function renderPay() {
-  const el = document.getElementById('payList');
-  try {
-    const q = query(
-      collection(db, 'PayStatements'),
-      where('employeeId', '==', currentEmp.id)
-    );
-    const snap = await getDocs(q);
-    if (snap.empty) { el.innerHTML = '<div class="empty">No pay statements yet.</div>'; return; }
-    const docs = snap.docs
-      .map(d => d.data())
-      .sort((a, b) => (b.savedAt?.toMillis?.() ?? 0) - (a.savedAt?.toMillis?.() ?? 0));
-    el.innerHTML = docs.map(p => {
-      const gross = p.gross || (p.hours * p.rate) || 0;
-      const isPaid = p.status === 'paid';
-      return `<div class="card">
-        <div class="card-title">${p.periodStart} – ${p.periodEnd}</div>
-        <div class="pay-amount">
-          <div class="pay-gross">${fmtMoney(gross)}</div>
-          <div class="pay-period">${p.periodStart} to ${p.periodEnd}</div>
-          <span class="pay-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? 'Paid' : 'Pending'}</span>
-        </div>
-        <div class="stat-row"><span class="stat-label">Hours</span><span class="stat-value">${p.hours}</span></div>
-        <div class="stat-row"><span class="stat-label">Rate</span><span class="stat-value">$${p.rate}/hr</span></div>
-        <div class="stat-row"><span class="stat-label">Gross Pay</span><span class="stat-value" style="color:var(--success)">${fmtMoney(gross)}</span></div>
-        ${p.paidDate ? `<div class="stat-row"><span class="stat-label">Paid On</span><span class="stat-value">${p.paidDate}</span></div>` : ''}
-      </div>`;
-    }).join('');
-  } catch (err) {
-    console.error(err);
-    el.innerHTML = '<div class="empty">Could not load pay statements.</div>';
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-//  TIME OFF TAB
-// ══════════════════════════════════════════════════════════
-async function renderTimeOff() {
-  const el = document.getElementById('requestList');
-  try {
-    const q = query(
-      collection(db, 'TimeOff'),
-      where('employeeId', '==', currentEmp.id)
-    );
-    const snap = await getDocs(q);
-    if (snap.empty) { el.innerHTML = '<div class="empty">No requests yet.</div>'; return; }
-    const requests = snap.docs
-      .map(d => d.data())
-      .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
-    el.innerHTML = requests.map(r => {
-      return `<div class="request-row">
-        <div>
-          <div class="request-type">${capitalize(r.type || 'Request')}</div>
-          <div class="request-dates">${r.startDate} to ${r.endDate}</div>
-          ${r.note ? `<div class="request-dates">${r.note}</div>` : ''}
-        </div>
-        <span class="badge ${r.status || 'pending'}">${capitalize(r.status || 'pending')}</span>
-      </div>`;
-    }).join('');
-  } catch (err) {
-    el.innerHTML = '<div class="empty">Could not load requests.</div>';
-  }
-}
-
-async function submitTimeOff() {
-  const start = document.getElementById('toStart').value;
-  const end   = document.getElementById('toEnd').value;
-  const type  = document.getElementById('toType').value;
-  const note  = document.getElementById('toNote').value.trim();
-
-  if (!start || !end)  { showToast('Please select both dates.'); return; }
-  if (end < start)     { showToast('End date must be after start date.'); return; }
-
-  const btn = document.getElementById('toSubmitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Submitting…';
-
-  try {
-    await addDoc(collection(db, 'TimeOff'), {
-      employeeId: currentEmp.id,
-      type,
-      startDate: start,
-      endDate: end,
-      note,
-      status: 'pending',
-      createdAt: Timestamp.now()
+    // Ata este dispositivo al PIN para que las reglas puedan verificar
+    // que el registro de horas es de esta persona.
+    await db.collection('PidClaims').doc(pin).set({
+      uid: auth.currentUser.uid,
+      employeeId: emp.id,
+      claimedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    document.getElementById('toNote').value = '';
-    showToast('Time off request submitted!');
-    renderTimeOff();
+    await db.collection('UserIndex').doc(auth.currentUser.uid).set({
+      pid: 'emp:' + emp.id, name: emp.name, role: 'colaborador', claimKey: pin,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    EMP = emp;
+    document.getElementById('errMsg').textContent = '';
+    await mostrarBoton();
   } catch (err) {
     console.error(err);
-    showToast('Error submitting request. Try again.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Submit Request';
+    errorPin(err.code === 'auth/operation-not-allowed'
+      ? 'Activa el acceso anónimo en Firebase'
+      : 'No se pudo conectar. Intenta de nuevo.');
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  PERIOD HELPERS
-// ══════════════════════════════════════════════════════════
-function getPeriodRange(which) {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-  let start, end, label;
+async function mostrarBoton() {
+  document.getElementById('whoAva').textContent = inicial(EMP.name);
+  document.getElementById('whoAva').style.background = color(EMP.name);
+  document.getElementById('whoName').textContent = EMP.name;
+  document.getElementById('whoSub').textContent  = STORES[EMP.store] || '';
 
-  if (which === 'current') {
-    if (d <= 15) {
-      start = `${y}-${pad(m+1)}-01`;
-      end   = `${y}-${pad(m+1)}-15`;
-    } else {
-      start = `${y}-${pad(m+1)}-16`;
-      end   = `${y}-${pad(m+1)}-${new Date(y, m+1, 0).getDate()}`;
-    }
+  // ¿Tiene un turno abierto hoy?
+  const q = await db.collection('ClockIns')
+    .where('employeeId','==',EMP.id)
+    .where('date','==',hoyStr())
+    .where('clockOut','==',null)
+    .limit(1).get();
+  ABIERTO = q.empty ? null : { id:q.docs[0].id, ...q.docs[0].data() };
+
+  const btn = document.getElementById('bigBtn');
+  const st  = document.getElementById('whoState');
+
+  if (ABIERTO) {
+    const desde = ABIERTO.clockIn.toDate();
+    st.innerHTML = `<span class="state in"><span class="pip"></span>Trabajando desde las ${hora(desde)}</span>`;
+    btn.className = 'big salida';
+    btn.querySelector('.ico').textContent = '■';
+    btn.querySelector('.lbl').textContent = 'Marcar Salida';
+    btn.querySelector('.hint').textContent = 'Toca para terminar tu turno';
   } else {
-    if (d <= 15) {
-      const pm = m === 0 ? 11 : m - 1;
-      const py = m === 0 ? y - 1 : y;
-      start = `${py}-${pad(pm+1)}-16`;
-      end   = `${py}-${pad(pm+1)}-${new Date(py, pm+1, 0).getDate()}`;
-    } else {
-      start = `${y}-${pad(m+1)}-01`;
-      end   = `${y}-${pad(m+1)}-15`;
-    }
+    st.innerHTML = `<span class="state out"><span class="pip"></span>Sin turno abierto</span>`;
+    btn.className = 'big entrada';
+    btn.querySelector('.ico').textContent = '▶';
+    btn.querySelector('.lbl').textContent = 'Marcar Entrada';
+    btn.querySelector('.hint').textContent = 'Toca para comenzar tu turno';
   }
-  label = start + ' to ' + end;
-  return { start, end, label };
+  btn.disabled = false;
+  pantalla('scBtn');
 }
 
-// ══════════════════════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════════════════════
-function todayStr() {
-  const n = new Date();
-  return `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
+async function marcar() {
+  const btn = document.getElementById('bigBtn');
+  btn.disabled = true;
+  btn.querySelector('.lbl').textContent = 'Guardando...';
+  try {
+    if (ABIERTO) {
+      const ahora = firebase.firestore.Timestamp.now();
+      const horas = Math.round(((ahora.toDate() - ABIERTO.clockIn.toDate())/3600000)*100)/100;
+      await db.collection('ClockIns').doc(ABIERTO.id).update({ clockOut: ahora, hours: horas });
+      confirmar('salida', horas);
+    } else {
+      await db.collection('ClockIns').add({
+        employeeId: EMP.id, store: EMP.store,
+        clockIn: firebase.firestore.Timestamp.now(),
+        clockOut: null, date: hoyStr(), hours: null
+      });
+      confirmar('entrada');
+    }
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    btn.querySelector('.lbl').textContent = ABIERTO ? 'Marcar Salida' : 'Marcar Entrada';
+    alert('No se pudo guardar: ' + err.message);
+  }
 }
 
-function pad(n) { return String(n).padStart(2, '0'); }
-
-function fmtTime(ms) {
-  if (!ms) return '--';
-  return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function confirmar(tipo, horas) {
+  const ico = document.getElementById('doneIco');
+  const nombre = (EMP.name || '').split(' ')[0];
+  if (tipo === 'entrada') {
+    ico.className = 'done-ico ok';  ico.textContent = '✓';
+    document.getElementById('doneT').textContent = '¡Buen turno, ' + nombre + '!';
+    document.getElementById('doneS').textContent = 'Entrada marcada a las ' + hora(new Date());
+    document.getElementById('doneH').style.display = 'none';
+  } else {
+    ico.className = 'done-ico bye'; ico.textContent = '👋';
+    document.getElementById('doneT').textContent = 'Hasta luego, ' + nombre;
+    document.getElementById('doneS').textContent = 'Salida marcada a las ' + hora(new Date());
+    const h = document.getElementById('doneH');
+    h.style.display = 'inline-block';
+    h.textContent = (horas || 0).toFixed(2) + ' horas trabajadas';
+  }
+  pantalla('scDone');
+  setTimeout(reset, 4500);
 }
 
-function fmtDateShort(ms) {
-  if (!ms) return '';
-  return new Date(ms).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+function reset() {
+  pin = ''; EMP = null; ABIERTO = null;
+  pintarDots();
+  document.getElementById('errMsg').textContent = '';
+  pantalla('scPin');
 }
 
-function fmtMoney(n) {
-  return '$' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-function show(id) { document.getElementById(id).classList.add('active'); }
-function hide(id) { document.getElementById(id).classList.remove('active'); }
-
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  document.getElementById('sec-' + name).classList.add('active');
-  if (name === 'hours')   renderHours();
-  if (name === 'pay')     renderPay();
-  if (name === 'timeoff') renderTimeOff();
-}
-
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// expose to onclick handlers
-window.toggleClock  = toggleClock;
-window.logout       = logout;
-window.switchTab    = switchTab;
-window.submitTimeOff = submitTimeOff;
-window.renderHours  = renderHours;
+// Teclado físico, por si la tablet tiene uno
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('scPin').classList.contains('on')) return;
+  if (/^[0-9]$/.test(e.key)) teclear(e.key);
+  else if (e.key === 'Backspace') borrar();
+});
 </script>
 </body>
 </html>
