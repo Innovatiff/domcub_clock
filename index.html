@@ -318,6 +318,12 @@ function hoyStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+const MCORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d) ? iso : `${d.getDate()} de ${MCORTO[d.getMonth()]}`;
+}
 function inicial(n) {
   const p = (n||'').trim().split(' ');
   return (p.length >= 2 ? p[0][0]+p[p.length-1][0] : (n||'?').slice(0,2)).toUpperCase();
@@ -391,16 +397,12 @@ async function entrar() {
     if (p.exists) {
       const d = await db.collection('Employees').doc(p.data().employeeId).get();
       if (d.exists) emp = { id: d.id, ...d.data() };
-    } else {
-      // Respaldo: los colaboradores dados de alta antes de mover el PIN
-      // lo tienen dentro de su propio documento. Se busca ahí y, si
-      // aparece, se crea el Pins/{pin} que faltaba para la próxima vez.
-      const q = await db.collection('Employees').where('pin','==',pin).limit(1).get();
-      if (!q.empty) {
-        emp = { id: q.docs[0].id, ...q.docs[0].data() };
-        try { await db.collection('Pins').doc(pin).set({ employeeId: emp.id }); } catch (e) {}
-      }
     }
+    // Ya no se busca el PIN dentro del documento del colaborador: la
+    // migración lo sacó de ahí, y aunque se encontrara, esta sesión no
+    // puede crear el Pins/{pin} que falta —sólo la gerencia escribe ahí—.
+    // Fallaba después, al reclamar la identidad, con un error que no decía
+    // nada. Ahora se avisa arriba de qué hay que hacer.
 
     if (!emp) { errorPin('PIN no reconocido'); return; }
     if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
@@ -422,9 +424,10 @@ async function entrar() {
     await mostrarBoton();
   } catch (err) {
     console.error(err);
-    errorPin(err.code === 'auth/operation-not-allowed'
-      ? 'Activa el acceso anónimo en Firebase'
-      : 'No se pudo conectar. Intenta de nuevo.');
+    errorPin(
+      err.code === 'auth/operation-not-allowed' ? 'Activa el acceso anónimo en Firebase' :
+      err.code === 'permission-denied'          ? 'Tu PIN no está dado de alta. Pídele a tu gerente que abra Colaboradores y pulse "Poner al día".' :
+                                                  'No se pudo conectar. Intenta de nuevo.');
   }
 }
 
@@ -434,24 +437,34 @@ async function mostrarBoton() {
   document.getElementById('whoName').textContent = EMP.name;
   document.getElementById('whoSub').textContent  = STORES[EMP.store] || '';
 
-  // ¿Tiene un turno abierto hoy?
+  // ¿Tiene un turno sin cerrar? Sin filtrar por fecha a propósito: quien
+  // olvida marcar la salida deja el turno abierto, y si aquí sólo se
+  // miraran las marcas de hoy no se vería, se abriría otro encima y el
+  // primero se quedaría sin cerrar para siempre. Un turno sin cerrar no
+  // tiene horas, así que esas horas nunca llegarían a la nómina.
   const q = await db.collection('ClockIns')
     .where('employeeId','==',EMP.id)
-    .where('date','==',hoyStr())
     .where('clockOut','==',null)
-    .limit(1).get();
-  ABIERTO = q.empty ? null : { id:q.docs[0].id, ...q.docs[0].data() };
+    .get();
+  const abiertos = q.docs.map(d => ({ id:d.id, ...d.data() }))
+    .sort((a,b) => String(b.date||'').localeCompare(String(a.date||'')));
+  ABIERTO = abiertos[0] || null;
 
   const btn = document.getElementById('bigBtn');
   const st  = document.getElementById('whoState');
 
   if (ABIERTO) {
-    const desde = ABIERTO.clockIn.toDate();
-    st.innerHTML = `<span class="state in"><span class="pip"></span>Trabajando desde las ${hora(desde)}</span>`;
+    const desde  = ABIERTO.clockIn.toDate();
+    const deHoy  = !ABIERTO.date || ABIERTO.date === hoyStr();
+    st.innerHTML = deHoy
+      ? `<span class="state in"><span class="pip"></span>Trabajando desde las ${hora(desde)}</span>`
+      : `<span class="state in"><span class="pip"></span>Turno sin cerrar del ${fechaCorta(ABIERTO.date)}</span>`;
     btn.className = 'big salida';
     btn.querySelector('.ico').textContent = '■';
     btn.querySelector('.lbl').textContent = 'Marcar Salida';
-    btn.querySelector('.hint').textContent = 'Toca para terminar tu turno';
+    btn.querySelector('.hint').textContent = deHoy
+      ? 'Toca para terminar tu turno'
+      : 'Ciérralo y avisa a tu gerente para que ajuste las horas';
   } else {
     st.innerHTML = `<span class="state out"><span class="pip"></span>Sin turno abierto</span>`;
     btn.className = 'big entrada';
