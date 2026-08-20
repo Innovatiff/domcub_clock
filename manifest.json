@@ -6,7 +6,6 @@
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
-  "id": "/domcub_clock/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a1f36",
