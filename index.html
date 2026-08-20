@@ -8,6 +8,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="El Águila">
+<meta name="description" content="Marca tu entrada y salida, revisa tus horas, tus recibos de pago y solicita permisos.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>El Águila</title>
 <style>
 :root {
@@ -115,13 +120,43 @@ button { touch-action: manipulation; }
 .brand-name { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
 .brand-tag  { color: var(--text-light); font-size: 11.5px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
 
+.login-stack { width: 100%; max-width: 340px; margin-bottom: auto; }
+
 .pin-card {
   background: var(--card-bg); border-radius: 22px;
-  padding: 26px 20px 20px; width: 100%; max-width: 340px;
+  padding: 26px 20px 20px; width: 100%;
   box-shadow: 0 24px 60px rgba(0,0,0,.35);
   animation: dropIn .6s var(--spring) .1s both;
-  margin-bottom: auto;
 }
+
+/* ── instalar en el teléfono ── */
+.install-btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; margin-top: 14px; padding: 14px;
+  border: 1px solid rgba(255,255,255,.16); border-radius: 15px;
+  background: rgba(255,255,255,.08); color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  animation: dropIn .5s var(--spring) .2s both;
+  transition: background .18s, transform .14s var(--ease);
+}
+.install-btn:active { transform: scale(.975); background: rgba(255,255,255,.16); }
+.install-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.install-btn[hidden], .install-tip[hidden] { display: none; }
+
+.install-tip {
+  margin-top: 14px; padding: 13px 15px;
+  border: 1px solid rgba(255,255,255,.13); border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  color: var(--text-light); font-size: 12.5px; line-height: 1.55;
+  animation: dropIn .5s var(--spring) .2s both;
+}
+.install-tip b { color: #fff; font-weight: 600; }
+.install-tip .ios-share {
+  display: inline-flex; width: 15px; height: 15px; vertical-align: -3px;
+  margin: 0 1px;
+}
+.install-tip .ios-share svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .pin-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: center; letter-spacing: 1px; text-transform: uppercase; }
 
@@ -558,6 +593,7 @@ button { touch-action: manipulation; }
     <div class="brand-tag">Control de Horas</div>
   </div>
 
+  <div class="login-stack">
   <div class="pin-card">
     <div class="pin-label">Ingresa tu PIN</div>
     <div class="pin-dots" id="pinDots">
@@ -581,6 +617,20 @@ button { touch-action: manipulation; }
       </button>
     </div>
     <div class="pin-msg" id="pinMsg"></div>
+  </div>
+
+  <!-- Aparece solo si el teléfono puede instalar la app -->
+  <button class="install-btn" id="installBtn" hidden onclick="installApp()">
+    <svg viewBox="0 0 24 24"><path d="M12 3v12"/><polyline points="7.5 10.5 12 15 16.5 10.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+    Instalar en mi teléfono
+  </button>
+
+  <!-- iPhone no permite instalar con un botón: se explica cómo -->
+  <div class="install-tip" id="installTip" hidden>
+    Para tenerla como app: toca
+    <span class="ios-share"><svg viewBox="0 0 24 24"><path d="M12 15V3"/><polyline points="8 6.5 12 2.5 16 6.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+    <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.
+  </div>
   </div>
 </div>
 
@@ -1509,21 +1559,64 @@ function skRows(n) {
 
 function sk(id, n) { $(id).innerHTML = skRows(n); }
 
-// se puede instalar en la pantalla de inicio en Android
-try {
-  const mf = {
-    name: 'El Águila', short_name: 'El Águila',
-    lang: 'es', start_url: '.', display: 'standalone',
-    background_color: '#1a1f36', theme_color: '#1a1f36'
-  };
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = URL.createObjectURL(new Blob([JSON.stringify(mf)], { type: 'application/json' }));
-  document.head.appendChild(link);
-} catch { /* no es crítico */ }
+// ═════════════════════════════════════════════════════════
+//  INSTALAR LA APP  (PWA)
+// ═════════════════════════════════════════════════════════
+
+// El service worker guarda la app para que abra al instante
+// y siga funcionando aunque se caiga la señal.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err =>
+      console.warn('No se registró el service worker:', err));
+  });
+}
+
+// Chrome/Edge/Android avisan cuando la app se puede instalar.
+let installEvent = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();          // usamos nuestro propio botón
+  installEvent = e;
+  $('installBtn').hidden = false;
+  $('installTip').hidden = true;
+});
+
+async function installApp() {
+  if (!installEvent) return;
+  const btn = $('installBtn');
+  btn.disabled = true;
+  installEvent.prompt();
+  const { outcome } = await installEvent.userChoice;
+  installEvent = null;
+  btn.disabled = false;
+  btn.hidden = true;
+  if (outcome === 'accepted') toast('Instalando El Águila…');
+}
+
+window.addEventListener('appinstalled', () => {
+  installEvent = null;
+  $('installBtn').hidden = true;
+  $('installTip').hidden = true;
+  toast('¡Listo! Ya la tienes en tu pantalla de inicio');
+});
+
+// iPhone/iPad no disparan beforeinstallprompt: se explican los pasos.
+(() => {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches
+                  || window.navigator.standalone === true;
+  if (standalone) return;      // ya está instalada
+
+  const ua  = navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua)
+           || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)) {
+    $('installTip').hidden = false;
+  }
+})();
 
 // se exponen para los manejadores del HTML
-Object.assign(window, { toggleClock, signOut, go, setPeriod, openSheet, closeSheet, submitRequest });
+Object.assign(window, { toggleClock, signOut, go, setPeriod, openSheet, closeSheet, submitRequest, installApp });
 </script>
 </body>
 </html>
