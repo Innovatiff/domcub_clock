@@ -796,7 +796,7 @@ button { touch-action: manipulation; }
 
     <div class="fgroup">
       <label class="flabel" for="offNote">Nota <span style="font-weight:500;color:var(--text-light)">(opcional)</span></label>
-      <textarea class="ftext" id="offNote" placeholder="Algo que tu gerente deba saber…"></textarea>
+      <textarea class="ftext" id="offNote" placeholder="Algo que tu SFM deba saber…"></textarea>
     </div>
 
     <button class="btn" id="offSubmit" onclick="submitRequest()">Enviar Solicitud</button>
@@ -1195,7 +1195,7 @@ async function paintPay() {
       where('employeeId', '==', emp.id)
     ));
     if (snap.empty) {
-      el.innerHTML = `<div class="card">${blank('pay', 'Aún no hay recibos', 'Los recibos aparecerán cuando tu gerente los publique')}</div>`;
+      el.innerHTML = `<div class="card">${blank('pay', 'Aún no hay recibos', 'Los recibos aparecerán cuando tu SFM los publique')}</div>`;
       return;
     }
     el.innerHTML = snap.docs.map(d => d.data())
@@ -1298,7 +1298,7 @@ async function submitRequest() {
     $('offNote').value = '';
     closeSheet();
     buzz([12, 50, 12]);
-    flash(true, 'Solicitud Enviada', 'Tu gerente la revisará pronto');
+    flash(true, 'Solicitud Enviada', 'Tu SFM la revisará pronto');
     paintOff();
   } catch (err) {
     console.error(err);
