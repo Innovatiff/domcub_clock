@@ -246,7 +246,7 @@
 <!-- 1. PIN -->
 <section class="screen on" id="scPin">
   <div class="pin-title">Ingresa tu PIN</div>
-  <div class="pin-sub">Los 6 dígitos que te dio tu gerente</div>
+  <div class="pin-sub">Los 6 dígitos que te dio tu SFM</div>
 
   <div class="dots" id="dots">
     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -400,12 +400,12 @@ async function entrar() {
     }
     // Ya no se busca el PIN dentro del documento del colaborador: la
     // migración lo sacó de ahí, y aunque se encontrara, esta sesión no
-    // puede crear el Pins/{pin} que falta —sólo la gerencia escribe ahí—.
+    // puede crear el Pins/{pin} que falta —sólo el SFM escribe ahí—.
     // Fallaba después, al reclamar la identidad, con un error que no decía
     // nada. Ahora se avisa arriba de qué hay que hacer.
 
     if (!emp) { errorPin('PIN no reconocido'); return; }
-    if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
+    if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu SFM.'); return; }
 
     // Ata este dispositivo al PIN para que las reglas puedan verificar
     // que el registro de horas es de esta persona.
@@ -426,7 +426,7 @@ async function entrar() {
     console.error(err);
     errorPin(
       err.code === 'auth/operation-not-allowed' ? 'Activa el acceso anónimo en Firebase' :
-      err.code === 'permission-denied'          ? 'Tu PIN no está dado de alta. Pídele a tu gerente que abra Colaboradores y pulse "Poner al día".' :
+      err.code === 'permission-denied'          ? 'Tu PIN no está dado de alta. Pídele a tu SFM que abra Colaboradores y pulse "Poner al día".' :
                                                   'No se pudo conectar. Intenta de nuevo.');
   }
 }
@@ -464,7 +464,7 @@ async function mostrarBoton() {
     btn.querySelector('.lbl').textContent = 'Marcar Salida';
     btn.querySelector('.hint').textContent = deHoy
       ? 'Toca para terminar tu turno'
-      : 'Ciérralo y avisa a tu gerente para que ajuste las horas';
+      : 'Ciérralo y avisa a tu SFM para que ajuste las horas';
   } else {
     st.innerHTML = `<span class="state out"><span class="pip"></span>Sin turno abierto</span>`;
     btn.className = 'big entrada';
