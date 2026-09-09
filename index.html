@@ -299,7 +299,15 @@ firebase.initializeApp({
   measurementId: "G-668H2W780D"
 });
 const db = firebase.firestore();
+// En el wifi de una tienda el canal en vivo a veces se queda atascado y
+// todo "tarda una eternidad"; con esto Firestore detecta la red mala y
+// cambia solo a un modo que sí pasa.
+db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
 const auth = firebase.auth();
+
+// La sesión anónima se abre al prender la pantalla, no al teclear el PIN:
+// un paso menos esperando con el dedo en el teclado.
+auth.onAuthStateChanged(u => { if (!u) auth.signInAnonymously().catch(() => {}); });
 
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -383,69 +391,97 @@ function pantalla(id) {
 // ── Sesión ──
 let EMP = null, ABIERTO = null;
 
+// Si la red se muere a mitad, mejor un aviso claro que un spinner eterno
+function conTiempo(promesa, ms) {
+  return Promise.race([promesa,
+    new Promise((_, fail) => setTimeout(() => fail(new Error('tiempo')), ms))]);
+}
+
 async function entrar() {
   document.getElementById('errMsg').innerHTML = '<span class="spin">◠</span> Verificando...';
   try {
-    // Firestore exige sesión iniciada; el PIN es la credencial.
-    if (!auth.currentUser) await auth.signInAnonymously();
-
-    // Pins/{pin} sólo se puede leer si ya se conoce el PIN exacto:
-    // la colección no permite enumerar.
-    let emp = null;
-    const p = await db.collection('Pins').doc(pin).get();
-
-    if (p.exists) {
-      const d = await db.collection('Employees').doc(p.data().employeeId).get();
-      if (d.exists) emp = { id: d.id, ...d.data() };
-    }
-    // Ya no se busca el PIN dentro del documento del colaborador: la
-    // migración lo sacó de ahí, y aunque se encontrara, esta sesión no
-    // puede crear el Pins/{pin} que falta —sólo la gerencia escribe ahí—.
-    // Fallaba después, al reclamar la identidad, con un error que no decía
-    // nada. Ahora se avisa arriba de qué hay que hacer.
-
-    if (!emp) { errorPin('PIN no reconocido'); return; }
-    if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
-
-    // Ata este dispositivo al PIN para que las reglas puedan verificar
-    // que el registro de horas es de esta persona.
-    await db.collection('PidClaims').doc(pin).set({
-      uid: auth.currentUser.uid,
-      employeeId: emp.id,
-      claimedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    await db.collection('UserIndex').doc(auth.currentUser.uid).set({
-      pid: 'emp:' + emp.id, name: emp.name, role: 'colaborador', claimKey: pin,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-
-    EMP = emp;
-    document.getElementById('errMsg').textContent = '';
-    await mostrarBoton();
+    await conTiempo(entrarDeVerdad(), 15000);
   } catch (err) {
     console.error(err);
     errorPin(
+      err.message === 'tiempo'                  ? 'La conexión está lenta. Intenta de nuevo.' :
       err.code === 'auth/operation-not-allowed' ? 'Activa el acceso anónimo en Firebase' :
       err.code === 'permission-denied'          ? 'Tu PIN no está dado de alta. Pídele a tu gerente que abra Colaboradores y pulse "Poner al día".' :
                                                   'No se pudo conectar. Intenta de nuevo.');
   }
 }
 
-async function mostrarBoton() {
+async function entrarDeVerdad() {
+  // Firestore exige sesión iniciada; el PIN es la credencial.
+  if (!auth.currentUser) await auth.signInAnonymously();
+  const uid = auth.currentUser.uid;
+
+  // Antes esto eran seis viajes a la red, uno detrás de otro; por eso a
+  // veces tardaba tanto. Ahora lo independiente va junto: el PIN, el
+  // reclamo anterior y la identidad de este aparato se leen A LA VEZ.
+  // Pins/{pin} sólo se puede leer conociendo el PIN exacto (no se enumera).
+  const [p, claim, idx] = await Promise.all([
+    db.collection('Pins').doc(pin).get(),
+    db.collection('PidClaims').doc(pin).get(),
+    db.collection('UserIndex').doc(uid).get()
+  ]);
+  if (!p.exists) { errorPin('PIN no reconocido'); return; }
+  const empId = p.data().employeeId;
+
+  // Lo normal es que la misma persona marque en la misma tablet todos los
+  // días: si el reclamo y la identidad ya son los correctos, no se vuelve
+  // a escribir nada — dos viajes menos, y los de escribir son los lentos.
+  const claimOk = claim.exists && claim.data().uid === uid
+    && claim.data().employeeId === empId;
+  const idxOk = idx.exists && idx.data().pid === ('emp:' + empId)
+    && idx.data().claimKey === pin;
+
+  let empDoc, abiertos;
+  if (claimOk && idxOk) {
+    [empDoc, abiertos] = await Promise.all([
+      db.collection('Employees').doc(empId).get(),
+      db.collection('ClockIns').where('employeeId','==',empId)
+        .where('clockOut','==',null).get()
+    ]);
+  } else {
+    // Persona o aparato nuevos: hay que atar el PIN a esta sesión, y el
+    // orden importa (la identidad se valida contra el reclamo). La ficha
+    // del colaborador se pide en paralelo, que no depende de nada.
+    const empP = db.collection('Employees').doc(empId).get();
+    await db.collection('PidClaims').doc(pin).set({
+      uid, employeeId: empId,
+      claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection('UserIndex').doc(uid).set({
+      pid: 'emp:' + empId, name: (await empP).data()?.name || '', role: 'colaborador', claimKey: pin,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    [empDoc, abiertos] = await Promise.all([
+      empP,
+      db.collection('ClockIns').where('employeeId','==',empId)
+        .where('clockOut','==',null).get()
+    ]);
+  }
+
+  if (!empDoc.exists) { errorPin('PIN no reconocido'); return; }
+  const emp = { id: empDoc.id, ...empDoc.data() };
+  if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
+
+  EMP = emp;
+  document.getElementById('errMsg').textContent = '';
+  mostrarBoton(abiertos);
+}
+
+function mostrarBoton(q) {
   document.getElementById('whoAva').textContent = inicial(EMP.name);
   document.getElementById('whoAva').style.background = color(EMP.name);
   document.getElementById('whoName').textContent = EMP.name;
   document.getElementById('whoSub').textContent  = STORES[EMP.store] || '';
 
-  // ¿Tiene un turno sin cerrar? Sin filtrar por fecha a propósito: quien
-  // olvida marcar la salida deja el turno abierto, y si aquí sólo se
-  // miraran las marcas de hoy no se vería, se abriría otro encima y el
-  // primero se quedaría sin cerrar para siempre. Un turno sin cerrar no
-  // tiene horas, así que esas horas nunca llegarían a la nómina.
-  const q = await db.collection('ClockIns')
-    .where('employeeId','==',EMP.id)
-    .where('clockOut','==',null)
-    .get();
+  // El turno sin cerrar viene ya leído desde entrar() —en paralelo con la
+  // ficha—. Sin filtrar por fecha a propósito: quien olvida marcar la
+  // salida deja el turno abierto, y si sólo se miraran las marcas de hoy
+  // no se vería, se abriría otro encima y esas horas jamás se pagarían.
   const abiertos = q.docs.map(d => ({ id:d.id, ...d.data() }))
     .sort((a,b) => String(b.date||'').localeCompare(String(a.date||'')));
   ABIERTO = abiertos[0] || null;
