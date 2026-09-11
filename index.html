@@ -243,6 +243,9 @@
     .who-ava { width: 60px; height: 60px; font-size: 22px; }
   }
 
+  .ver { position: fixed; bottom: 8px; right: 12px; font-size: 10px;
+    color: rgba(255,255,255,0.22); z-index: 5; letter-spacing: 0.06em; }
+
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
@@ -307,43 +310,54 @@
   </div>
 </section>
 
+<div class="ver">v3</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-firebase.initializeApp({
-  apiKey: "AIzaSyDtOfZXPEP-k_gvvu3Lvt307mOLBWezMrw",
-  authDomain: "domcub.firebaseapp.com",
-  projectId: "domcub",
-  storageBucket: "domcub.firebasestorage.app",
-  messagingSenderId: "329163319008",
-  appId: "1:329163319008:web:1c7d3e71252ec4f5641285",
-  measurementId: "G-668H2W780D"
-});
-const db = firebase.firestore();
-// En un iPad instalado como app, iOS mata el canal "en vivo" de Firestore
-// cada vez que la pantalla se apaga o la app pasa a segundo plano; al
-// volver, Firestore sigue hablando con un canal muerto hasta un timeout
-// eterno — por eso "tardaba con buen wifi". El modo simple (long polling)
-// no usa ese canal y es la receta probada para kioscos en Safari/WebKit.
-db.settings({ experimentalForceLongPolling: true, merge: true });
-const auth = firebase.auth();
-
-// La sesión anónima se abre al prender la pantalla, no al teclear el PIN:
-// un paso menos esperando con el dedo en el teclado. La lectura pequeña
-// de después calienta la conexión para que el primer PIN no arranque frío.
-auth.onAuthStateChanged(u => {
-  if (!u) auth.signInAnonymously().catch(() => {});
-  else db.collection('Config').doc('mensaje').get().catch(() => {});
-});
-
-// Al volver la app del reposo se corta y reabre la conexión a propósito:
-// mejor un reinicio limpio de un segundo que heredar un canal zombi.
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible') return;
-  db.disableNetwork().then(() => db.enableNetwork()).catch(() => {});
-});
-
+// La interfaz se construye ANTES de tocar la red: aunque Firebase o la
+// conexión fallaran por completo, el reloj y el teclado siempre aparecen.
+var db = null, auth = null;
+function iniciarFirebase() {
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyDtOfZXPEP-k_gvvu3Lvt307mOLBWezMrw",
+      authDomain: "domcub.firebaseapp.com",
+      projectId: "domcub",
+      storageBucket: "domcub.firebasestorage.app",
+      messagingSenderId: "329163319008",
+      appId: "1:329163319008:web:1c7d3e71252ec4f5641285",
+      measurementId: "G-668H2W780D"
+    });
+    db = firebase.firestore();
+    // En un iPad instalado como app, iOS mata el canal "en vivo" de Firestore
+    // cada vez que la pantalla se apaga o la app pasa a segundo plano; al
+    // volver, Firestore sigue hablando con un canal muerto hasta un timeout
+    // eterno — por eso "tardaba con buen wifi". El modo simple (long polling)
+    // no usa ese canal y es la receta probada para kioscos en Safari/WebKit.
+    db.settings({ experimentalForceLongPolling: true, merge: true });
+    auth = firebase.auth();
+    
+    // La sesión anónima se abre al prender la pantalla, no al teclear el PIN:
+    // un paso menos esperando con el dedo en el teclado. La lectura pequeña
+    // de después calienta la conexión para que el primer PIN no arranque frío.
+    auth.onAuthStateChanged(u => {
+      if (!u) auth.signInAnonymously().catch(() => {});
+      else db.collection('Config').doc('mensaje').get().catch(() => {});
+    });
+    
+    // Al volver la app del reposo se corta y reabre la conexión a propósito:
+    // mejor un reinicio limpio de un segundo que heredar un canal zombi.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      db.disableNetwork().then(() => db.enableNetwork()).catch(() => {});
+    });
+  } catch (e) {
+    console.error('firebase', e);
+    document.getElementById('errMsg').textContent = 'Sin conexión con la base. Recarga la página.';
+  }
+}
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const COLORS = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626','#7c3aed','#0284c7','#be185d'];
@@ -626,6 +640,8 @@ document.addEventListener('keydown', e => {
   if (/^[0-9]$/.test(e.key)) teclear(e.key);
   else if (e.key === 'Backspace') borrar();
 });
+
+iniciarFirebase();
 </script>
 </body>
 </html>
