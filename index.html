@@ -505,7 +505,9 @@ async function entrarDeVerdad() {
       claimedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     await db.collection('UserIndex').doc(uid).set({
-      pid: 'emp:' + empId, name: (await empP).data()?.name || '', role: 'colaborador', claimKey: pin,
+      pid: 'emp:' + empId,
+      name: (function (d) { return (d.exists && d.data().name) || ''; })(await empP),
+      role: 'colaborador', claimKey: pin,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     [empDoc, abiertos] = await Promise.all([
