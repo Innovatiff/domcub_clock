@@ -310,7 +310,7 @@
   </div>
 </section>
 
-<div class="ver">v3</div>
+<div class="ver">v4</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -336,7 +336,13 @@ function iniciarFirebase() {
     // volver, Firestore sigue hablando con un canal muerto hasta un timeout
     // eterno — por eso "tardaba con buen wifi". El modo simple (long polling)
     // no usa ese canal y es la receta probada para kioscos en Safari/WebKit.
-    db.settings({ experimentalForceLongPolling: true, merge: true });
+    // La autodetección viene ENCENDIDA por defecto y choca con el modo
+    // forzado ("cannot be used together"); hay que apagarla explícitamente.
+    db.settings({
+      experimentalForceLongPolling: true,
+      experimentalAutoDetectLongPolling: false,
+      merge: true
+    });
     auth = firebase.auth();
     
     // La sesión anónima se abre al prender la pantalla, no al teclear el PIN:
