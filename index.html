@@ -299,15 +299,28 @@ firebase.initializeApp({
   measurementId: "G-668H2W780D"
 });
 const db = firebase.firestore();
-// En el wifi de una tienda el canal en vivo a veces se queda atascado y
-// todo "tarda una eternidad"; con esto Firestore detecta la red mala y
-// cambia solo a un modo que sí pasa.
-db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
+// En un iPad instalado como app, iOS mata el canal "en vivo" de Firestore
+// cada vez que la pantalla se apaga o la app pasa a segundo plano; al
+// volver, Firestore sigue hablando con un canal muerto hasta un timeout
+// eterno — por eso "tardaba con buen wifi". El modo simple (long polling)
+// no usa ese canal y es la receta probada para kioscos en Safari/WebKit.
+db.settings({ experimentalForceLongPolling: true, merge: true });
 const auth = firebase.auth();
 
 // La sesión anónima se abre al prender la pantalla, no al teclear el PIN:
-// un paso menos esperando con el dedo en el teclado.
-auth.onAuthStateChanged(u => { if (!u) auth.signInAnonymously().catch(() => {}); });
+// un paso menos esperando con el dedo en el teclado. La lectura pequeña
+// de después calienta la conexión para que el primer PIN no arranque frío.
+auth.onAuthStateChanged(u => {
+  if (!u) auth.signInAnonymously().catch(() => {});
+  else db.collection('Config').doc('mensaje').get().catch(() => {});
+});
+
+// Al volver la app del reposo se corta y reabre la conexión a propósito:
+// mejor un reinicio limpio de un segundo que heredar un canal zombi.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  db.disableNetwork().then(() => db.enableNetwork()).catch(() => {});
+});
 
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -390,6 +403,7 @@ function pantalla(id) {
 
 // ── Sesión ──
 let EMP = null, ABIERTO = null;
+let intento = 0;   // un intento viejo que despierte tarde no pisa al nuevo
 
 // Si la red se muere a mitad, mejor un aviso claro que un spinner eterno
 function conTiempo(promesa, ms) {
@@ -397,10 +411,22 @@ function conTiempo(promesa, ms) {
     new Promise((_, fail) => setTimeout(() => fail(new Error('tiempo')), ms))]);
 }
 
+async function reconectar() {
+  try { await db.disableNetwork(); await db.enableNetwork(); } catch (e) {}
+}
+
 async function entrar() {
   document.getElementById('errMsg').innerHTML = '<span class="spin">◠</span> Verificando...';
   try {
-    await conTiempo(entrarDeVerdad(), 15000);
+    try {
+      await conTiempo(entrarDeVerdad(), 8000);
+    } catch (e1) {
+      if (e1.message !== 'tiempo') throw e1;
+      // El primer intento se colgó: casi siempre es la conexión dormida.
+      // Se reinicia y se reintenta solo, sin que la persona haga nada.
+      await reconectar();
+      await conTiempo(entrarDeVerdad(), 10000);
+    }
   } catch (err) {
     console.error(err);
     errorPin(
@@ -412,6 +438,7 @@ async function entrar() {
 }
 
 async function entrarDeVerdad() {
+  const mio = ++intento;
   // Firestore exige sesión iniciada; el PIN es la credencial.
   if (!auth.currentUser) await auth.signInAnonymously();
   const uid = auth.currentUser.uid;
@@ -467,6 +494,7 @@ async function entrarDeVerdad() {
   const emp = { id: empDoc.id, ...empDoc.data() };
   if (emp.status !== 'active') { errorPin('Cuenta inactiva. Habla con tu gerente.'); return; }
 
+  if (mio !== intento) return;   // ya hay un intento más nuevo en marcha
   EMP = emp;
   document.getElementById('errMsg').textContent = '';
   mostrarBoton(abiertos);
