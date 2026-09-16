@@ -310,7 +310,7 @@
   </div>
 </section>
 
-<div class="ver">v4</div>
+<div class="ver">v5</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -587,29 +587,60 @@ function mostrarBoton(q) {
   pantalla('scBtn');
 }
 
+// Las horas del cierre, calculadas al momento
+function horasDeCierre() {
+  return Math.round(((Date.now() - ABIERTO.clockIn.toDate().getTime())/3600000)*100)/100;
+}
+
+// La escritura pura: cerrar el turno abierto o abrir uno nuevo
+async function escribirMarca(cerrando) {
+  if (cerrando) {
+    const horas = horasDeCierre();
+    await db.collection('ClockIns').doc(ABIERTO.id).update({
+      clockOut: firebase.firestore.Timestamp.now(), hours: horas
+    });
+    return horas;
+  }
+  await db.collection('ClockIns').add({
+    employeeId: EMP.id, store: EMP.store,
+    clockIn: firebase.firestore.Timestamp.now(),
+    clockOut: null, date: hoyStr(), hours: null
+  });
+  return null;
+}
+
 async function marcar() {
   const btn = document.getElementById('bigBtn');
   btn.disabled = true;
   btn.querySelector('.lbl').textContent = 'Guardando...';
+  const cerrando = !!ABIERTO;
   try {
-    if (ABIERTO) {
-      const ahora = firebase.firestore.Timestamp.now();
-      const horas = Math.round(((ahora.toDate() - ABIERTO.clockIn.toDate())/3600000)*100)/100;
-      await db.collection('ClockIns').doc(ABIERTO.id).update({ clockOut: ahora, hours: horas });
-      confirmar('salida', horas);
-    } else {
-      await db.collection('ClockIns').add({
-        employeeId: EMP.id, store: EMP.store,
-        clockIn: firebase.firestore.Timestamp.now(),
-        clockOut: null, date: hoyStr(), hours: null
-      });
-      confirmar('entrada');
+    let horas = null;
+    try {
+      // Guardar con límite de tiempo: "Guardando..." eterno nunca más
+      horas = await conTiempo(escribirMarca(cerrando), 8000);
+    } catch (e1) {
+      if (e1.message !== 'tiempo') throw e1;
+      // Se colgó: reiniciar la conexión y averiguar si la primera
+      // escritura llegó de todos modos ANTES de repetirla — así jamás se
+      // duplica una entrada ni se cierra dos veces.
+      await reconectar();
+      const q = await conTiempo(db.collection('ClockIns')
+        .where('employeeId','==',EMP.id).where('clockOut','==',null).get(), 8000);
+      const faltaEscribir = cerrando
+        ? q.docs.some(function (d) { return d.id === ABIERTO.id; })  // sigue abierto
+        : q.docs.length === 0;                                       // aún no se abrió
+      if (faltaEscribir) horas = await conTiempo(escribirMarca(cerrando), 10000);
+      else if (cerrando) horas = horasDeCierre();   // ya había llegado
     }
+    confirmar(cerrando ? 'salida' : 'entrada', horas);
   } catch (err) {
     console.error(err);
     btn.disabled = false;
-    btn.querySelector('.lbl').textContent = ABIERTO ? 'Marcar Salida' : 'Marcar Entrada';
-    alert('No se pudo guardar: ' + err.message);
+    btn.querySelector('.lbl').textContent = cerrando ? 'Marcar Salida' : 'Marcar Entrada';
+    btn.querySelector('.hint').textContent = err.message === 'tiempo'
+      ? 'La conexión está lenta: toca otra vez'
+      : 'No se pudo guardar: toca otra vez';
   }
 }
 
