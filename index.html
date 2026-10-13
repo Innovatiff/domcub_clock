@@ -310,7 +310,7 @@
   </div>
 </section>
 
-<div class="ver">v5</div>
+<div class="ver">v6</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -377,8 +377,34 @@ function hora(d) {
   h = h % 12 || 12;
   return `${h}:${m} ${s}`;
 }
+// ── Hora real ──
+// Si la tableta tiene la hora mal, las marcas salían mal. Se compara su
+// reloj con la hora del servidor (cabecera Date) y se corrige la diferencia.
+var DESFASE = 0;
+function ahora() { return new Date(Date.now() + DESFASE); }
+function sincronizarHora() {
+  try {
+    var x = new XMLHttpRequest();
+    var t0 = Date.now();
+    x.open('HEAD', location.pathname + '?t=' + t0, true);
+    x.onload = function () {
+      var h = x.getResponseHeader('Date');
+      var srv = h ? new Date(h).getTime() : NaN;
+      if (isNaN(srv)) return;
+      var dif = srv - (t0 + Date.now()) / 2;
+      DESFASE = Math.abs(dif) > 60000 ? dif : 0;
+    };
+    x.send();
+  } catch (e) {}
+}
+sincronizarHora();
+setInterval(sincronizarHora, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) sincronizarHora();
+});
+
 function hoyStr() {
-  const d = new Date();
+  const d = ahora();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 const MCORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -399,7 +425,7 @@ function color(n) {
 
 // ── Reloj de pantalla ──
 function tick() {
-  const d = new Date();
+  const d = ahora();
   document.getElementById('nowTime').textContent = hora(d);
   document.getElementById('nowDate').textContent =
     `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
@@ -589,7 +615,7 @@ function mostrarBoton(q) {
 
 // Las horas del cierre, calculadas al momento
 function horasDeCierre() {
-  return Math.round(((Date.now() - ABIERTO.clockIn.toDate().getTime())/3600000)*100)/100;
+  return Math.round(((ahora().getTime() - ABIERTO.clockIn.toDate().getTime())/3600000)*100)/100;
 }
 
 // La escritura pura: cerrar el turno abierto o abrir uno nuevo
@@ -597,13 +623,13 @@ async function escribirMarca(cerrando) {
   if (cerrando) {
     const horas = horasDeCierre();
     await db.collection('ClockIns').doc(ABIERTO.id).update({
-      clockOut: firebase.firestore.Timestamp.now(), hours: horas
+      clockOut: firebase.firestore.Timestamp.fromDate(ahora()), hours: horas
     });
     return horas;
   }
   await db.collection('ClockIns').add({
     employeeId: EMP.id, store: EMP.store,
-    clockIn: firebase.firestore.Timestamp.now(),
+    clockIn: firebase.firestore.Timestamp.fromDate(ahora()),
     clockOut: null, date: hoyStr(), hours: null
   });
   return null;
@@ -650,12 +676,12 @@ function confirmar(tipo, horas) {
   if (tipo === 'entrada') {
     ico.className = 'done-ico ok';  ico.textContent = '✓';
     document.getElementById('doneT').textContent = '¡Buen turno, ' + nombre + '!';
-    document.getElementById('doneS').textContent = 'Entrada marcada a las ' + hora(new Date());
+    document.getElementById('doneS').textContent = 'Entrada marcada a las ' + hora(ahora());
     document.getElementById('doneH').style.display = 'none';
   } else {
     ico.className = 'done-ico bye'; ico.textContent = '👋';
     document.getElementById('doneT').textContent = 'Hasta luego, ' + nombre;
-    document.getElementById('doneS').textContent = 'Salida marcada a las ' + hora(new Date());
+    document.getElementById('doneS').textContent = 'Salida marcada a las ' + hora(ahora());
     const h = document.getElementById('doneH');
     h.style.display = 'inline-block';
     h.textContent = (horas || 0).toFixed(2) + ' horas trabajadas';
