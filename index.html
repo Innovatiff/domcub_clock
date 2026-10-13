@@ -310,7 +310,7 @@
   </div>
 </section>
 
-<div class="ver">v6</div>
+<div class="ver">v7</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -350,7 +350,12 @@ function iniciarFirebase() {
     // de después calienta la conexión para que el primer PIN no arranque frío.
     auth.onAuthStateChanged(u => {
       if (!u) auth.signInAnonymously().catch(() => {});
-      else db.collection('Config').doc('mensaje').get().catch(() => {});
+      else {
+        db.collection('Config').doc('mensaje').get().catch(() => {});
+        db.collection('Config').doc('zona').get().then(function (d) {
+          if (d.exists && d.data().tz) { ZONA = d.data().tz; tick(); }
+        }).catch(() => {});
+      }
     });
     
     // Al volver la app del reposo se corta y reabre la conexión a propósito:
@@ -370,7 +375,18 @@ const COLORS = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626','#7c3aed','#02
 
 const STORES = { '1':'Tienda', '2':'Tienda Cocina' };
 
+// La zona horaria de la tienda, no la de la tableta: la gerencia la
+// guarda en Config/zona desde el Panel.
+var ZONA = 'America/New_York';
+function enZona(d) {
+  try {
+    var t = d.toLocaleString('en-US', { timeZone: ZONA }).replace(',', '');
+    var r = new Date(t);
+    return isNaN(r.getTime()) ? d : r;
+  } catch (e) { return d; }
+}
 function hora(d) {
+  d = enZona(d);
   let h = d.getHours();
   const m = String(d.getMinutes()).padStart(2,'0');
   const s = h < 12 ? 'a. m.' : 'p. m.';
@@ -404,7 +420,7 @@ document.addEventListener('visibilitychange', function () {
 });
 
 function hoyStr() {
-  const d = ahora();
+  const d = enZona(ahora());
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 const MCORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -425,8 +441,8 @@ function color(n) {
 
 // ── Reloj de pantalla ──
 function tick() {
-  const d = ahora();
-  document.getElementById('nowTime').textContent = hora(d);
+  const d = enZona(ahora());
+  document.getElementById('nowTime').textContent = hora(ahora());
   document.getElementById('nowDate').textContent =
     `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
   const h = d.getHours();
